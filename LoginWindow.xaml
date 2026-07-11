@@ -1,0 +1,367 @@
+<Window x:Class="WpfWidgets.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Chronos Widgets — Sign In"
+        Height="620" Width="440"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True"
+        ResizeMode="NoResize"
+        Icon="/app-icon-light.ico">
+
+    <Window.Resources>
+        <!-- Placeholders for TextBox/PasswordBox -->
+        <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#12FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#20FFFFFF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="#40FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="#FF0078D4"/>
+                                <Setter Property="Background" Value="#1AFFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernPasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="Background" Value="#12FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#20FFFFFF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="#40FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="#FF0078D4"/>
+                                <Setter Property="Background" Value="#1AFFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Outer glow shadow layer -->
+        <Border Background="#F0111113"
+                BorderBrush="#25FFFFFF"
+                BorderThickness="1.5"
+                CornerRadius="24">
+            <Border.Effect>
+                <DropShadowEffect Color="#FF000000" Opacity="0.6" BlurRadius="40" ShadowDepth="8" Direction="270"/>
+            </Border.Effect>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- Drag bar -->
+                    <RowDefinition Height="*"/>     <!-- Content -->
+                </Grid.RowDefinitions>
+
+                <!-- Drag handle / close button bar -->
+                <Grid Grid.Row="0" 
+                      Background="Transparent"
+                      MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                      Height="44">
+                    <Button x:Name="CloseBtn"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0,0,14,0"
+                            Width="26" Height="26"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            Cursor="Hand"
+                            Click="CloseBtn_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="Transparent" CornerRadius="13" x:Name="bg">
+                                    <TextBlock Text="&#xE5CD;" FontFamily="{StaticResource MaterialSymbolsOutlined}"
+                                               Typography.StandardLigatures="True"
+                                               Typography.ContextualLigatures="True"
+                                               Foreground="#44FFFFFF" FontSize="11"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               x:Name="icon"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bg" Property="Background" Value="#33FF3355"/>
+                                        <Setter TargetName="icon" Property="Foreground" Value="#FFFF4466"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+ 
+                <!-- Main content -->
+                <StackPanel Grid.Row="1" 
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Center"
+                            Width="330"
+                            Margin="0,10,0,40">
+ 
+                    <!-- App Icon -->
+                    <Border Width="64" Height="64"
+                            CornerRadius="18"
+                            Background="#1A0078D4"
+                            BorderBrush="#300078D4"
+                            BorderThickness="1.5"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,16">
+                        <TextBlock Text="&#xF500;"
+                                   FontFamily="{StaticResource MaterialSymbolsOutlined}"
+                                   Typography.StandardLigatures="True"
+                                   Typography.ContextualLigatures="True"
+                                   FontSize="28"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+ 
+                    <!-- Title -->
+                    <TextBlock Text="Chronos Widgets"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,4"/>
+
+                    <!-- Subtitle -->
+                    <TextBlock x:Name="SubtitleText"
+                               Text="Sign in with your Chronos account"
+                               FontSize="12"
+                               Foreground="#88FFFFFF"
+                               HorizontalAlignment="Center"
+                               TextAlignment="Center"
+                               Margin="0,0,0,24"/>
+
+                    <!-- Email/Password Inputs -->
+                    <StackPanel x:Name="EmailForm" Margin="0,0,0,16">
+                        <TextBlock Text="Email Address" Foreground="#B0FFFFFF" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox x:Name="EmailInput" Style="{StaticResource ModernTextBoxStyle}" Margin="0,0,0,14"/>
+
+                        <TextBlock Text="Password" Foreground="#B0FFFFFF" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <PasswordBox x:Name="PasswordInput" Style="{StaticResource ModernPasswordBoxStyle}" Margin="0,0,0,16"/>
+
+                         <!-- Email Submit Button -->
+                         <Button x:Name="EmailSubmitButton"
+                                 Height="40"
+                                 Content="Sign In"
+                                 Cursor="Hand"
+                                 Click="EmailSubmitButton_Click">
+                             <Button.Template>
+                                 <ControlTemplate TargetType="Button">
+                                     <Border x:Name="bg" Background="#30FFFFFF" CornerRadius="10" BorderBrush="#20FFFFFF" BorderThickness="1">
+                                         <TextBlock x:Name="btnText" Text="{TemplateBinding Content}" FontSize="13" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                     </Border>
+                                     <ControlTemplate.Triggers>
+                                         <Trigger Property="IsMouseOver" Value="True">
+                                             <Setter TargetName="bg" Property="Background" Value="#44FFFFFF"/>
+                                         </Trigger>
+                                         <Trigger Property="IsPressed" Value="True">
+                                             <Setter TargetName="bg" Property="Background" Value="#22FFFFFF"/>
+                                         </Trigger>
+                                         <Trigger Property="IsEnabled" Value="False">
+                                             <Setter TargetName="bg" Property="Background" Value="#10FFFFFF"/>
+                                             <Setter TargetName="btnText" Property="Foreground" Value="#44FFFFFF"/>
+                                         </Trigger>
+                                     </ControlTemplate.Triggers>
+                                 </ControlTemplate>
+                             </Button.Template>
+                         </Button>
+                    </StackPanel>
+
+                    <!-- Divider -->
+                    <Grid Margin="0,8,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Separator Grid.Column="0" Background="#15FFFFFF" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="or" FontSize="11" Foreground="#44FFFFFF" Margin="10,0" VerticalAlignment="Center"/>
+                        <Separator Grid.Column="2" Background="#15FFFFFF" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Google Sign-In Button -->
+                    <Button x:Name="SignInButton"
+                            Height="44"
+                            Cursor="Hand"
+                            Click="SignInButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="bg"
+                                        Background="#FF0078D4"
+                                        CornerRadius="10"
+                                        BorderBrush="#400078D4"
+                                        BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0"
+                                                Width="28" Height="28"
+                                                CornerRadius="6"
+                                                Background="#18FFFFFF"
+                                                Margin="8,0,0,0">
+                                            <TextBlock Text="G"
+                                                       FontSize="14"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       FontFamily="Segoe UI"/>
+                                        </Border>
+
+                                        <TextBlock x:Name="btnText"
+                                                   Grid.Column="1"
+                                                   Text="Continue with Google"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="-28,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bg" Property="Background" Value="#FF0066BB"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="bg" Property="Background" Value="#FF0055A0"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="bg" Property="Background" Value="#FF1A2A3A"/>
+                                        <Setter TargetName="bg" Property="BorderBrush" Value="#20FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <!-- Toggle Mode Link -->
+                    <TextBlock x:Name="ToggleModeLink"
+                               Text="Don't have an account? Sign Up"
+                               FontSize="12"
+                               Foreground="#FF0078D4"
+                               Cursor="Hand"
+                               HorizontalAlignment="Center"
+                               Margin="0,20,0,0"
+                               MouseLeftButtonDown="ToggleModeLink_Click"/>
+
+                    <!-- Status message -->
+                    <TextBlock x:Name="StatusText"
+                               Text=""
+                               FontSize="12"
+                               Foreground="#88FFFFFF"
+                               HorizontalAlignment="Center"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Margin="0,16,0,0"
+                               Visibility="Collapsed"/>
+
+                    <!-- Animated Dots (loading indicator) -->
+                    <StackPanel x:Name="LoadingDots"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Margin="0,16,0,0"
+                                Visibility="Collapsed">
+                        <Ellipse Width="6" Height="6" Fill="#440078D4" Margin="2,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Style.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <ColorAnimation Storyboard.TargetProperty="Fill.Color" 
+                                                                    From="#440078D4" To="#FF0078D4"
+                                                                    Duration="0:0:0.6" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <Ellipse Width="6" Height="6" Fill="#440078D4" Margin="2,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Style.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.2">
+                                                    <ColorAnimation Storyboard.TargetProperty="Fill.Color"
+                                                                    From="#440078D4" To="#FF0078D4"
+                                                                    Duration="0:0:0.6" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <Ellipse Width="6" Height="6" Fill="#440078D4" Margin="2,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Style.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.4">
+                                                    <ColorAnimation Storyboard.TargetProperty="Fill.Color"
+                                                                    From="#440078D4" To="#FF0078D4"
+                                                                    Duration="0:0:0.6" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                    </StackPanel>
+
+                    <!-- Footer note -->
+                    <TextBlock Text="Your data stays in your Chronos account."
+                               FontSize="10"
+                               Foreground="#22FFFFFF"
+                               HorizontalAlignment="Center"
+                               Margin="0,24,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

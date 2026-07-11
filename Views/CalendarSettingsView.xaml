@@ -1,0 +1,233 @@
+<UserControl x:Class="WpfWidgets.Views.CalendarSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="420" d:DesignWidth="580">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+        <StackPanel>
+            <!-- Title Header -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <TextBlock Text="&#xE878;" 
+                           FontFamily="{StaticResource MaterialSymbolsOutlined}" 
+                           Typography.StandardLigatures="True"
+                           Typography.ContextualLigatures="True"
+                           Foreground="#FF0078D4" 
+                           FontSize="18" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,8,0"/>
+                <TextBlock Text="Calendar Widget Settings" 
+                           FontSize="16" 
+                           FontWeight="SemiBold" 
+                           Foreground="{DynamicResource DashboardText}" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <Separator Background="{DynamicResource DashboardBorder}" Margin="0,0,0,16"/>
+
+            <!-- Enable Widget Toggle -->
+            <Grid Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Enable Calendar Widget" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="Show the calendar widget on your desktop wallpaper" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                </StackPanel>
+                <CheckBox x:Name="CalendarEnabledToggle" 
+                          Grid.Column="1" 
+                          Style="{StaticResource ToggleSwitchStyle}"
+                          Checked="CalendarEnabledToggle_Changed" 
+                          Unchecked="CalendarEnabledToggle_Changed"
+                          VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+            <!-- Lock Position Toggle -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Lock Position" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="Prevent dragging and ignore mouse clicks on the widget" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                </StackPanel>
+                <CheckBox x:Name="CalendarLockToggle" 
+                          Grid.Column="1" 
+                          Style="{StaticResource ToggleSwitchStyle}"
+                          Checked="CalendarLockToggle_Changed" 
+                          Unchecked="CalendarLockToggle_Changed"
+                          VerticalAlignment="Center"/>
+            </Grid>
+            <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+            <!-- Google Calendar Connections Section -->
+            <StackPanel Margin="0,0,0,12">
+                <StackPanel Orientation="Horizontal">
+                    <!-- Google with Google Colors -->
+                    <TextBlock FontSize="14" FontWeight="Bold" Margin="0,0,5,0"><Run Text="G" Foreground="#4285F4"/><Run Text="o" Foreground="#EA4335"/><Run Text="o" Foreground="#FBBC05"/><Run Text="g" Foreground="#4285F4"/><Run Text="l" Foreground="#34A853"/><Run Text="e" Foreground="#EA4335"/></TextBlock>
+                    <TextBlock Text="Calendar Integration" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="Bold"/>
+                </StackPanel>
+                <TextBlock Text="Link multiple Google Calendar accounts to aggregate all your events" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+            </StackPanel>
+
+            <!-- Connected Accounts List -->
+            <Border Background="{DynamicResource SidebarHoverBackground}"
+                    BorderBrush="{DynamicResource DashboardBorder}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="16,14"
+                    Margin="0,0,0,14">
+                <StackPanel>
+                    <ItemsControl x:Name="AccountsList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,6,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- User Account Icon -->
+                                    <Border Grid.Column="0" Width="28" Height="28" CornerRadius="14" Background="#1A0078D4" Margin="0,0,10,0">
+                                        <TextBlock Text="&#xE853;" FontFamily="{StaticResource MaterialSymbolsOutlined}" FontSize="16" Foreground="#FF0078D4" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    
+                                    <TextBlock Grid.Column="1" Text="{Binding}" Foreground="{DynamicResource DashboardText}" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    
+                                    <!-- Circular Trash Disconnect Button -->
+                                    <Button Grid.Column="2" 
+                                            Width="28"
+                                            Height="28"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Cursor="Hand"
+                                            Tag="{Binding}"
+                                            ToolTip="Disconnect Account"
+                                            Click="DisconnectAccount_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BtnBorder" Background="Transparent" CornerRadius="14">
+                                                    <TextBlock x:Name="BtnIcon" Text="&#xE872;" FontFamily="{StaticResource MaterialSymbolsOutlined}" FontSize="15" Foreground="{DynamicResource DashboardSubText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BtnBorder" Property="Background" Value="#15FF4444"/>
+                                                        <Setter TargetName="BtnIcon" Property="Foreground" Value="#FFFF4444"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock x:Name="NoAccountsText" 
+                               Text="No Google accounts connected yet." 
+                               Foreground="{DynamicResource DashboardSubText}" 
+                               FontSize="12" 
+                               FontStyle="Italic"
+                               Margin="0,6,0,12" 
+                               HorizontalAlignment="Center"/>
+
+                    <!-- Pill Connect Button -->
+                    <Button x:Name="ConnectAccountButton"
+                            HorizontalAlignment="Left"
+                            Height="32"
+                            Margin="0,8,0,0"
+                            Background="#FF0078D4"
+                            Foreground="White"
+                            BorderBrush="Transparent"
+                            Cursor="Hand"
+                            Padding="16,0"
+                            Click="ConnectAccountButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="16" Padding="{TemplateBinding Padding}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE145;" FontFamily="{StaticResource MaterialSymbolsOutlined}" FontSize="15" Foreground="White" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Connect Account" FontSize="11.5" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="#FF0066B3"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+            <!-- Sync Status Section -->
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="Sync Status" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock Text="Background calendar sync is checked every 15 minutes" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+            </StackPanel>
+
+            <Border Background="{DynamicResource SidebarHoverBackground}"
+                    BorderBrush="{DynamicResource DashboardBorder}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="16,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="SyncStatusDot"
+                                       Text="&#x2B24;"
+                                       FontSize="8"
+                                       Foreground="{DynamicResource DashboardSubText}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,6,0"/>
+                            <TextBlock x:Name="SyncStatusText"
+                                       Text="Not synced yet"
+                                       Foreground="{DynamicResource DashboardSubText}"
+                                       FontSize="12"/>
+                        </StackPanel>
+                        <TextBlock x:Name="EventsCacheInfo"
+                                   Text="No events cached"
+                                   Foreground="{DynamicResource DashboardSubText}"
+                                   FontSize="11"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <Button x:Name="SyncNowButton"
+                            Grid.Column="1"
+                            Content="Sync Now"
+                            FontSize="11"
+                            Padding="12,6"
+                            Background="{DynamicResource SidebarActiveBackground}"
+                            Foreground="{DynamicResource DashboardText}"
+                            BorderBrush="{DynamicResource DashboardBorder}"
+                            BorderThickness="1"
+                            Cursor="Hand"
+                            IsEnabled="False"
+                            Click="SyncNowButton_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

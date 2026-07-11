@@ -1,0 +1,43 @@
+## Ignore Visual Studio temporary files, builds, and user settings
+.vs/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Re]leases/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Log]s/
+[Tt]est[Rr]esults/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Mono Auto Generated Files
+mono_crash.*
+
+# Windows image analyses cache
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Packaging and signing files
+AppPackages/
+BundleArtifacts/
+*_TemporaryKey.pfx
+*.msixupload
+*.msix
+*.appxsym
+*.cer
+*.pfx
+

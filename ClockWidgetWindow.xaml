@@ -1,0 +1,138 @@
+<Window x:Class="WpfWidgets.ClockWidgetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Digital Clock Widget" 
+        Height="145" 
+        Width="340"
+        MinHeight="90"
+        MinWidth="160"
+        WindowStyle="None" 
+        AllowsTransparency="True" 
+        Background="Transparent"
+        ShowInTaskbar="False"
+        WindowStartupLocation="Manual"
+        Topmost="False"
+        ResizeMode="CanResize"
+        SizeChanged="Window_SizeChanged"
+        Icon="/app-icon-light.ico">
+    
+    <Grid Background="#01FFFFFF">
+        <!-- Layer 1: Outer Glass Container (aligned to window edge) -->
+        <Border x:Name="OuterGlassCard"
+                Style="{StaticResource OuterGlassCardStyle}"
+                MouseLeftButtonDown="WidgetCard_MouseLeftButtonDown"
+                MouseLeftButtonUp="WidgetCard_MouseLeftButtonUp"
+                MouseMove="WidgetCard_MouseMove">
+            
+            <!-- Layer 2: Inner Content Card -->
+            <Border x:Name="WidgetCard"
+                    Style="{StaticResource WidgetCardStyle}">
+                
+                <!-- Card content area -->
+                <Grid Margin="18,12">
+                    <Grid.RowDefinitions>
+                        <!-- Primary Clock -->
+                        <RowDefinition Height="*"/>
+                        <!-- Separator line -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- World Clocks List -->
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Primary Clock -->
+                    <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,2,0,2">
+                        <TextBlock x:Name="Clock1Label"
+                                   Text="Local Time"
+                                   FontSize="10.5"
+                                   FontWeight="SemiBold"
+                                   FontFamily="{DynamicResource WidgetFont}"
+                                   Foreground="{DynamicResource WidgetSubText}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,1"
+                                   Opacity="0.75"
+                                   Visibility="Collapsed"/>
+                        
+                        <TextBlock x:Name="Clock1Time"
+                                   Text="10:10 AM"
+                                   FontSize="38"
+                                   FontWeight="Bold"
+                                   FontFamily="{DynamicResource WidgetFont}"
+                                   Foreground="{DynamicResource WidgetText}"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"/>
+                        
+                        <TextBlock x:Name="Clock1Date"
+                                   Text="Monday, July 6"
+                                   FontSize="15"
+                                   FontFamily="{DynamicResource WidgetFont}"
+                                   Foreground="{DynamicResource WidgetSubText}"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Margin="0,1,0,0"/>
+                    </StackPanel>
+
+                    <!-- Bottom Separator -->
+                    <Border x:Name="BottomSeparator"
+                            Grid.Row="1"
+                            Height="1"
+                            Background="{DynamicResource WidgetBorder}"
+                            Opacity="0.25"
+                            Margin="4,6,4,8"
+                            Visibility="Collapsed"/>
+
+                    <!-- Bottom Clocks -->
+                    <UniformGrid x:Name="BottomClocksGrid"
+                                 Grid.Row="2"
+                                 Rows="1"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 Visibility="Collapsed">
+                        
+                        <!-- Clock 2 -->
+                        <StackPanel x:Name="Clock2Panel" Margin="20,0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock x:Name="Clock2Label"
+                                       Text="London (+8h)"
+                                       FontSize="11"
+                                       FontFamily="{DynamicResource WidgetFont}"
+                                       Foreground="{DynamicResource WidgetSubText}"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                            <TextBlock x:Name="Clock2Time"
+                                       Text="6:10 PM"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       FontFamily="{DynamicResource WidgetFont}"
+                                       Foreground="{DynamicResource WidgetText}"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Margin="0,1,0,0"/>
+                        </StackPanel>
+
+                        <!-- Clock 3 -->
+                        <StackPanel x:Name="Clock3Panel" Margin="20,0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock x:Name="Clock3Label"
+                                       Text="Tokyo (+16h)"
+                                       FontSize="11"
+                                       FontFamily="{DynamicResource WidgetFont}"
+                                       Foreground="{DynamicResource WidgetSubText}"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"/>
+                            <TextBlock x:Name="Clock3Time"
+                                       Text="2:10 AM"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       FontFamily="{DynamicResource WidgetFont}"
+                                       Foreground="{DynamicResource WidgetText}"
+                                       HorizontalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Margin="0,1,0,0"/>
+                        </StackPanel>
+                    </UniformGrid>
+                </Grid>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

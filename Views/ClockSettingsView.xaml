@@ -1,0 +1,202 @@
+<UserControl x:Class="WpfWidgets.Views.ClockSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="360">
+    
+    <Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" 
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,12,0">
+                <!-- Title Header -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <TextBlock Text="&#xF8BB;" 
+                               FontFamily="{StaticResource MaterialSymbolsOutlined}" 
+                               Typography.StandardLigatures="True"
+                               Typography.ContextualLigatures="True"
+                               Foreground="#FF0078D4" 
+                               FontSize="18" 
+                               VerticalAlignment="Center" 
+                               Margin="0,0,8,0"/>
+                    <TextBlock Text="Clock Widget Settings" 
+                               FontSize="16" 
+                               FontWeight="SemiBold" 
+                               Foreground="{DynamicResource DashboardText}" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Separator Background="{DynamicResource DashboardBorder}" Margin="0,0,0,16"/>
+
+                <StackPanel>
+                    <!-- Enable Widget Toggle Row -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Enable Clock Widget" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Show or hide the clock on your desktop wallpaper" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="ClockEnabledToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="ClockEnabledToggle_Changed" 
+                                  Unchecked="ClockEnabledToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+                    <!-- Time Format Row -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="24-Hour Time Format" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Display time in 24-hour military notation" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="TimeFormatToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="TimeFormatToggle_Changed" 
+                                  Unchecked="TimeFormatToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+                    <!-- Lock Position Row -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Lock Position" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Prevent dragging and ignore mouse clicks" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="LockPositionToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="LockPositionToggle_Changed" 
+                                  Unchecked="LockPositionToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+                    <!-- Primary Clock Label -->
+                    <StackPanel Margin="0,0,0,16">
+                        <TextBlock Text="Primary Clock Label" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                        <TextBlock Text="Custom name displayed above the primary clock" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,8"/>
+                        <TextBox x:Name="Clock1LabelText" 
+                                 Height="32"
+                                 Padding="10,0"
+                                 FontSize="12.5"
+                                 VerticalContentAlignment="Center"
+                                 Background="#12FFFFFF"
+                                 Foreground="{DynamicResource DashboardText}"
+                                 BorderBrush="{DynamicResource DashboardBorder}"
+                                 BorderThickness="1"
+                                 TextChanged="ClockSettingChanged"/>
+
+                        <TextBlock Text="Primary Clock Timezone" Foreground="{DynamicResource DashboardText}" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,4"/>
+                        <ComboBox x:Name="Clock1TimeZoneCombo" 
+                                  Height="32"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  SelectionChanged="ClockSettingChanged"/>
+                    </StackPanel>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,8,0,16"/>
+
+                    <!-- Clock 2 Header/Toggle -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Enable Clock 2 (World Clock)" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Show a second clock with a custom timezone" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="Clock2EnabledToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="Clock2EnabledToggle_Changed" 
+                                  Unchecked="Clock2EnabledToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Clock 2 Details Panel -->
+                    <StackPanel x:Name="Clock2DetailsPanel" Margin="0,8,0,16">
+                        <TextBlock Text="Clock 2 Label" Foreground="{DynamicResource DashboardText}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBox x:Name="Clock2LabelText" 
+                                 Height="32"
+                                 Padding="10,0"
+                                 FontSize="12.5"
+                                 VerticalContentAlignment="Center"
+                                 Background="#12FFFFFF"
+                                 Foreground="{DynamicResource DashboardText}"
+                                 BorderBrush="{DynamicResource DashboardBorder}"
+                                 BorderThickness="1"
+                                 Margin="0,0,0,10"
+                                 TextChanged="ClockSettingChanged"/>
+
+                        <TextBlock Text="Clock 2 Timezone" Foreground="{DynamicResource DashboardText}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <ComboBox x:Name="Clock2TimeZoneCombo" 
+                                  Height="32"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  SelectionChanged="ClockSettingChanged"/>
+                    </StackPanel>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,8,0,16"/>
+
+                    <!-- Clock 3 Header/Toggle -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Enable Clock 3 (World Clock)" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Show a third clock with a custom timezone" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="Clock3EnabledToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="Clock3EnabledToggle_Changed" 
+                                  Unchecked="Clock3EnabledToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Clock 3 Details Panel -->
+                    <StackPanel x:Name="Clock3DetailsPanel" Margin="0,8,0,16">
+                        <TextBlock Text="Clock 3 Label" Foreground="{DynamicResource DashboardText}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBox x:Name="Clock3LabelText" 
+                                 Height="32"
+                                 Padding="10,0"
+                                 FontSize="12.5"
+                                 VerticalContentAlignment="Center"
+                                 Background="#12FFFFFF"
+                                 Foreground="{DynamicResource DashboardText}"
+                                 BorderBrush="{DynamicResource DashboardBorder}"
+                                 BorderThickness="1"
+                                 Margin="0,0,0,10"
+                                 TextChanged="ClockSettingChanged"/>
+
+                        <TextBlock Text="Clock 3 Timezone" Foreground="{DynamicResource DashboardText}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <ComboBox x:Name="Clock3TimeZoneCombo" 
+                                  Height="32"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  SelectionChanged="ClockSettingChanged"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

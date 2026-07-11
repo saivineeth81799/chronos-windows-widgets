@@ -1,0 +1,204 @@
+<UserControl x:Class="WpfWidgets.Views.WeatherSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="400">
+    
+    <Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" 
+                      VerticalScrollBarVisibility="Auto"
+                      PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+            <StackPanel Margin="0,0,12,0">
+                <!-- Title Header -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <TextBlock Text="&#xE89C;" 
+                               FontFamily="{StaticResource MaterialSymbolsOutlined}" 
+                               Typography.StandardLigatures="True"
+                               Typography.ContextualLigatures="True"
+                               Foreground="#FF0078D4" 
+                               FontSize="18" 
+                               VerticalAlignment="Center" 
+                               Margin="0,0,8,0"/>
+                    <TextBlock Text="Weather Widget Settings" 
+                               FontSize="16" 
+                               FontWeight="SemiBold" 
+                               Foreground="{DynamicResource DashboardText}" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Separator Background="{DynamicResource DashboardBorder}" Margin="0,0,0,16"/>
+
+                <StackPanel>
+                    <!-- Enable Widget Toggle Row -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Enable Weather Widget" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Show or hide the weather forecast widget on your desktop" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="WeatherEnabledToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="WeatherEnabledToggle_Changed" 
+                                  Unchecked="WeatherEnabledToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+                    <!-- Lock Position Row -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Lock Position" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Prevent dragging and ignore mouse clicks on the weather widget" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="LockPositionToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="LockPositionToggle_Changed" 
+                                  Unchecked="LockPositionToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+                    <!-- Metric System Toggle Row -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Use Celsius Units" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="Display temperature values in Celsius (°C) instead of Fahrenheit (°F)" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <CheckBox x:Name="UnitCelsiusToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  Checked="UnitCelsiusToggle_Changed" 
+                                  Unchecked="UnitCelsiusToggle_Changed"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+                    <!-- Weather Location Input Box -->
+                    <StackPanel>
+                        <TextBlock Text="Weather Location" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
+                        <TextBlock Text="Lookup coordinates for a city to display its weather forecast" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,10"/>
+                        
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Search TextBox -->
+                            <TextBox x:Name="LocationSearchInput" 
+                                     Grid.Column="0"
+                                     Height="32"
+                                     Padding="10,0"
+                                     FontSize="12.5"
+                                     VerticalContentAlignment="Center"
+                                     Background="#12FFFFFF"
+                                     Foreground="{DynamicResource DashboardText}"
+                                     BorderBrush="{DynamicResource DashboardBorder}"
+                                     BorderThickness="1"
+                                     GotFocus="LocationSearchInput_GotFocus"
+                                     LostFocus="LocationSearchInput_LostFocus">
+                                <TextBox.Resources>
+                                    <Style TargetType="Border">
+                                        <Setter Property="CornerRadius" Value="16"/>
+                                    </Style>
+                                </TextBox.Resources>
+                            </TextBox>
+                            
+                            <!-- Search Button -->
+                            <Button x:Name="SearchButton"
+                                    Grid.Column="1"
+                                    Width="80"
+                                    Height="32"
+                                    Margin="10,0,0,0"
+                                    Background="#FF0078D4"
+                                    Foreground="White"
+                                    BorderBrush="Transparent"
+                                    Cursor="Hand"
+                                    Click="SearchButton_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="16">
+                                            <TextBlock Text="Search" FontSize="11.5" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="#FF0066B3"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- Auto-Detect Button -->
+                            <Button x:Name="AutoDetectButton"
+                                    Grid.Column="2"
+                                    Width="100"
+                                    Height="32"
+                                    Margin="8,0,0,0"
+                                    Background="#12FFFFFF"
+                                    Foreground="{DynamicResource DashboardText}"
+                                    BorderBrush="{DynamicResource DashboardBorder}"
+                                    Cursor="Hand"
+                                    Click="AutoDetectButton_Click">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="16">
+                                            <TextBlock Text="Auto-Detect" FontSize="11.5" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+
+                        <!-- Search Result Status & Info -->
+                        <Border x:Name="StatusInfoCard"
+                                Background="{DynamicResource SidebarHoverBackground}"
+                                BorderBrush="{DynamicResource DashboardBorder}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="12"
+                                Margin="0,4,0,14">
+                            <StackPanel>
+                                <TextBlock x:Name="ActiveLocationLabel"
+                                           Text="Current Location: Seattle (47.6062, -122.3321)"
+                                           Foreground="{DynamicResource DashboardText}"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"/>
+                                <TextBlock x:Name="LookupStatusText"
+                                           Text="Ready"
+                                           Foreground="{DynamicResource DashboardSubText}"
+                                           FontSize="11.5"
+                                           Margin="0,4,0,0"
+                                           Visibility="Visible"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
