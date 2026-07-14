@@ -10,7 +10,8 @@ namespace WpfWidgets.Views
     public partial class GeneralSettingsView : System.Windows.Controls.UserControl
     {
         private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string AppName = "WindowsWidgets";
+        private const string AppName = "ChronosWidgets";
+        private const string OldAppName = "WindowsWidgets";
         private bool _isInitializing = true;
 
         public GeneralSettingsView()
@@ -30,6 +31,9 @@ namespace WpfWidgets.Views
             OpacitySlider.Value = WidgetConfig.Current.WidgetOpacity * 100;
             OpacityValueText.Text = $"{(int)OpacitySlider.Value}%";
             
+            // Load blur value from config
+            BlurToggle.IsChecked = WidgetConfig.Current.WidgetBlurEnabled;
+            
             _isInitializing = false;
         }
 
@@ -42,7 +46,79 @@ namespace WpfWidgets.Views
                     if (key != null)
                     {
                         object? value = key.GetValue(AppName);
-                        StartupToggle.IsChecked = value != null;
+                        if (value == null)
+                        {
+                            object? oldValue = key.GetValue(OldAppName);
+                            if (oldValue != null)
+                            {
+                                try
+                                {
+                                    using (RegistryKey? writeKey = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true))
+                                    {
+                                        if (writeKey != null)
+                                        {
+                                            writeKey.SetValue(AppName, oldValue);
+                                            writeKey.DeleteValue(OldAppName, false);
+                                            value = oldValue;
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[GeneralSettings] Failed to migrate startup registry key: {ex.Message}");
+                                }
+
+                                try
+                                {
+                                    using (RegistryKey? approvedKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", true))
+                                    {
+                                        if (approvedKey != null)
+                                        {
+                                            object? approvedValue = approvedKey.GetValue(OldAppName);
+                                            if (approvedValue != null)
+                                            {
+                                                approvedKey.SetValue(AppName, approvedValue);
+                                                approvedKey.DeleteValue(OldAppName, false);
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[GeneralSettings] Failed to migrate StartupApproved registry key: {ex.Message}");
+                                }
+                            }
+                        }
+                        if (value == null)
+                        {
+                            StartupToggle.IsChecked = false;
+                        }
+                        else
+                        {
+                            bool isEnabled = true;
+                            try
+                            {
+                                using (RegistryKey? approvedKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"))
+                                {
+                                    if (approvedKey != null)
+                                    {
+                                        byte[]? approvedBytes = approvedKey.GetValue(AppName) as byte[];
+                                        if (approvedBytes != null && approvedBytes.Length > 0)
+                                        {
+                                            if ((approvedBytes[0] & 1) != 0)
+                                            {
+                                                isEnabled = false;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[GeneralSettings] Failed to check StartupApproved key: {ex.Message}");
+                            }
+                            StartupToggle.IsChecked = isEnabled;
+                        }
                     }
                 }
             }
@@ -68,10 +144,42 @@ namespace WpfWidgets.Views
                             // Get WpfWidgets.exe file path in output directory
                             string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WpfWidgets.exe");
                             key.SetValue(AppName, $"\"{exePath}\"");
+
+                            try
+                            {
+                                using (RegistryKey? approvedKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", true))
+                                {
+                                    if (approvedKey != null)
+                                    {
+                                        approvedKey.DeleteValue(AppName, false);
+                                        approvedKey.DeleteValue(OldAppName, false);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[GeneralSettings] Failed to update StartupApproved key for enable: {ex.Message}");
+                            }
                         }
                         else
                         {
                             key.DeleteValue(AppName, false);
+
+                            try
+                            {
+                                using (RegistryKey? approvedKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", true))
+                                {
+                                    if (approvedKey != null)
+                                    {
+                                        approvedKey.DeleteValue(AppName, false);
+                                        approvedKey.DeleteValue(OldAppName, false);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[GeneralSettings] Failed to clean StartupApproved key: {ex.Message}");
+                            }
                         }
                     }
                 }
@@ -107,6 +215,7 @@ namespace WpfWidgets.Views
             ThemeSelector.SelectedItem = WidgetConfig.Current.ClockTheme;
             OpacitySlider.Value = WidgetConfig.Current.WidgetOpacity * 100;
             OpacityValueText.Text = $"{(int)OpacitySlider.Value}%";
+            BlurToggle.IsChecked = WidgetConfig.Current.WidgetBlurEnabled;
             _isInitializing = false;
         }
 
@@ -152,6 +261,19 @@ namespace WpfWidgets.Views
             // Apply opacity instantly
             var app = System.Windows.Application.Current as App;
             app?.ApplyWidgetOpacity();
+        }
+
+        private void BlurToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            bool enableBlur = BlurToggle.IsChecked ?? false;
+            WidgetConfig.Current.WidgetBlurEnabled = enableBlur;
+            WidgetConfig.Save();
+
+            // Apply blur instantly
+            var app = System.Windows.Application.Current as App;
+            app?.ApplyWidgetBlur();
         }
 
         private void ScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)

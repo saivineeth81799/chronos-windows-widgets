@@ -105,6 +105,33 @@
 
             <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
 
+            <!-- Frosted Glass Blur Toggle Option Row -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Frosted Glass Blur" 
+                               Foreground="{DynamicResource DashboardText}" 
+                               FontSize="14" 
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="Enable frosted-glass Acrylic background effect behind widgets" 
+                               Foreground="{DynamicResource DashboardSubText}" 
+                               FontSize="11" 
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+                
+                <CheckBox x:Name="BlurToggle" 
+                          Grid.Column="1" 
+                          Style="{StaticResource ToggleSwitchStyle}"
+                          Checked="BlurToggle_Changed" 
+                          Unchecked="BlurToggle_Changed"
+                          VerticalAlignment="Center"/>
+            </Grid>
+
+            <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
             <!-- Google Account Section -->
             <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="Google Account" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>

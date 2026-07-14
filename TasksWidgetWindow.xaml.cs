@@ -66,7 +66,7 @@ namespace WpfWidgets
 
             // Enable native frosted glass blur
             DesktopWindowHelper.EnableBlur(this);
-            DesktopWindowHelper.SetRoundedWindowRegion(this, 12);
+            DesktopWindowHelper.SetRoundedWindowRegion(this, 8);
 
             // 3. Set click-through state
             ApplyLockState();
@@ -257,7 +257,7 @@ namespace WpfWidgets
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            DesktopWindowHelper.SetRoundedWindowRegion(this, 12);
+            DesktopWindowHelper.SetRoundedWindowRegion(this, 8);
             if (this.IsLoaded)
             {
                 WidgetConfig.Current.TasksWidth = e.NewSize.Width;

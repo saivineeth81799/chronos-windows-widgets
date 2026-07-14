@@ -147,130 +147,140 @@
                             BorderThickness="1" 
                             CornerRadius="16" 
                             Padding="8,12">
-                        <StackPanel>
-                            <RadioButton Content="General" 
-                                         Style="{StaticResource SidebarTabStyle}" 
-                                         Tag="&#xE8B8;" 
-                                         IsChecked="True" 
-                                         Checked="NavButton_Checked"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
                             
-                            <RadioButton Content="Clock Widget" 
-                                         Style="{StaticResource SidebarTabStyle}" 
-                                         Tag="&#xF8BB;" 
-                                         Checked="NavButton_Checked"/>
-                            
-                            <RadioButton Content="Calendar Widget" 
-                                         Style="{StaticResource SidebarTabStyle}" 
-                                         Tag="&#xE878;" 
-                                         Checked="NavButton_Checked"/>
-                            
-                            <RadioButton Content="Tasks Widget" 
-                                         Style="{StaticResource SidebarTabStyle}" 
-                                         Tag="&#xE8E9;" 
-                                         Checked="NavButton_Checked"/>
-                            
-                            <RadioButton Content="Weather Widget" 
-                                         Style="{StaticResource SidebarTabStyle}" 
-                                         Tag="&#xF172;" 
-                                         Checked="NavButton_Checked"/>
-                        </StackPanel>
+                            <StackPanel Grid.Row="0">
+                                <RadioButton Content="General" 
+                                             Style="{StaticResource SidebarTabStyle}" 
+                                             Tag="&#xE8B8;" 
+                                             IsChecked="True" 
+                                             Checked="NavButton_Checked"/>
+                                
+                                <RadioButton Content="Clock Widget" 
+                                             Style="{StaticResource SidebarTabStyle}" 
+                                             Tag="&#xF8BB;" 
+                                             Checked="NavButton_Checked"/>
+                                
+                                <RadioButton Content="Calendar Widget" 
+                                             Style="{StaticResource SidebarTabStyle}" 
+                                             Tag="&#xE878;" 
+                                             Checked="NavButton_Checked"/>
+                                
+                                <RadioButton Content="Tasks Widget" 
+                                             Style="{StaticResource SidebarTabStyle}" 
+                                             Tag="&#xE8E9;" 
+                                             Checked="NavButton_Checked"/>
+                                
+                                <RadioButton Content="Weather Widget" 
+                                             Style="{StaticResource SidebarTabStyle}" 
+                                             Tag="&#xF172;" 
+                                             Checked="NavButton_Checked"/>
+                            </StackPanel>
+
+                            <!-- Startup Warning Card at bottom of menu container -->
+                            <StackPanel x:Name="StartupBanner"
+                                        Grid.Row="1"
+                                        Visibility="Collapsed">
+                                <!-- Separator line divider -->
+                                <Separator Background="{DynamicResource DashboardBorder}" Height="1" Margin="4,8,4,12"/>
+                                
+                                <Grid Margin="4,0,4,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" Foreground="#FFF7630C" FontSize="13" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="Startup Disabled" Foreground="{DynamicResource DashboardText}" FontSize="11.5" FontWeight="SemiBold" Margin="6,0" VerticalAlignment="Center"/>
+                                </Grid>
+                                
+                                <TextBlock Text="Widgets won't launch automatically on PC startup." Foreground="{DynamicResource DashboardSubText}" FontSize="9.5" TextWrapping="Wrap" Margin="4,0,4,10"/>
+                                
+                                <Button Click="EnableStartup_Click" Content="Enable Auto-Start" FontSize="10.5" Height="26" Margin="4,0,4,0" Cursor="Hand" HorizontalAlignment="Stretch">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="bg" Background="#FF0078D4" CornerRadius="6">
+                                                <TextBlock Text="{TemplateBinding Content}" Foreground="White" FontSize="10.5" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="bg" Property="Background" Value="#FF2B88D9"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="bg" Property="Background" Value="#FF005A9E"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Mobile App Link Card at bottom of menu container when startup is enabled -->
+                            <StackPanel x:Name="MobileAppBanner"
+                                        Grid.Row="1"
+                                        Visibility="Collapsed">
+                                <!-- Separator line divider -->
+                                <Separator Background="{DynamicResource DashboardBorder}" Height="1" Margin="4,8,4,12"/>
+                                
+                                <Grid Margin="4,0,4,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Image Grid.Column="0" Source="{DynamicResource AppIconImage}" Width="14" Height="14" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="Chronos Mobile" Foreground="{DynamicResource DashboardText}" FontSize="11.5" FontWeight="SemiBold" Margin="6,0" VerticalAlignment="Center"/>
+                                </Grid>
+                                
+                                <TextBlock Text="Sync your tasks and track time on your mobile phone." Foreground="{DynamicResource DashboardSubText}" FontSize="9.5" TextWrapping="Wrap" Margin="4,0,4,12"/>
+                                
+                                <!-- Play Store Button -->
+                                <Button Click="DownloadMobileApp_Click" Height="30" Margin="4,0,4,8" Cursor="Hand" HorizontalAlignment="Stretch">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="bg" Background="{DynamicResource StoreButtonBackground}" CornerRadius="6">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Image Source="pack://application:,,,/play-store.png" Width="14" Height="14" Margin="0,0,8,0" Stretch="Uniform" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Get on Android" Foreground="{DynamicResource StoreButtonForeground}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="bg" Property="Background" Value="{DynamicResource StoreButtonHoverBackground}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="bg" Property="Background" Value="{DynamicResource StoreButtonPressedBackground}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                
+                                <!-- App Store (iOS) Coming Soon Button -->
+                                <Button IsEnabled="False" Height="30" Margin="4,0,4,4" HorizontalAlignment="Stretch" Opacity="0.35">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="bg" Background="{DynamicResource StoreButtonBackground}" CornerRadius="6">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Image Source="pack://application:,,,/app-store.png" Width="14" Height="14" Margin="0,0,8,0" Stretch="Uniform" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="iOS (Coming Soon)" Foreground="{DynamicResource StoreButtonForeground}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </Border>
                     
                     <!-- Right Content Area (Free standing Grid) -->
                     <Grid Grid.Column="2">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            
-                            <!-- Startup Warning Banner Prompt -->
-                            <Border x:Name="StartupBanner" 
-                                    Grid.Row="0" 
-                                    Background="#1A0078D4" 
-                                    BorderBrush="#300078D4" 
-                                    BorderThickness="1" 
-                                    CornerRadius="12" 
-                                    Padding="12,10" 
-                                    Margin="0,0,0,16"
-                                    Visibility="Collapsed">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="24"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <!-- Info Icon (Segoe MDL2 Assets) -->
-                                    <TextBlock Grid.Column="0" 
-                                               Text="" 
-                                               FontFamily="Segoe MDL2 Assets" 
-                                               Foreground="#FF0078D4" 
-                                               FontSize="16" 
-                                               VerticalAlignment="Center"/>
-                                    
-                                    <!-- Banner Text Panel -->
-                                    <StackPanel Grid.Column="1" Margin="8,0,16,0" VerticalAlignment="Center">
-                                        <TextBlock Text="Enable Start with Windows" 
-                                                   Foreground="{DynamicResource DashboardText}" 
-                                                   FontSize="12" 
-                                                   FontWeight="SemiBold"/>
-                                        <TextBlock Text="Allow widgets to run automatically at login so they stay active." 
-                                                   Foreground="{DynamicResource DashboardSubText}" 
-                                                   FontSize="10" 
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,2,0,0"/>
-                                    </StackPanel>
-                                    
-                                    <!-- Actions Panel -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <!-- Action Button: Enable Now -->
-                                        <Button Click="EnableStartup_Click"
-                                                Content="Enable Now" 
-                                                FontSize="11" 
-                                                Padding="10,4"
-                                                Background="#FF0078D4" 
-                                                Foreground="White" 
-                                                BorderBrush="Transparent"
-                                                Cursor="Hand">
-                                            <Button.Resources>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="CornerRadius" Value="6" />
-                                                </Style>
-                                            </Button.Resources>
-                                        </Button>
-                                        
-                                        <!-- Dismiss Button: Close -->
-                                        <Button Click="DismissBanner_Click"
-                                                Margin="8,0,0,0" 
-                                                Width="24" 
-                                                Height="24"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                Cursor="Hand">
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border Background="Transparent" CornerRadius="12" x:Name="border">
-                                                        <TextBlock Text="" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource DashboardSubText}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="border" Property="Background" Value="{DynamicResource SidebarActiveBackground}"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Button.Template>
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                            
-                            <!-- Dynamic Content Control -->
-                            <ContentControl x:Name="ActiveSettingsPanel" 
-                                            Grid.Row="1"
-                                            VerticalAlignment="Stretch" 
-                                            HorizontalAlignment="Stretch"/>
-                        </Grid>
+                        <!-- Dynamic Content Control -->
+                        <ContentControl x:Name="ActiveSettingsPanel" 
+                                        VerticalAlignment="Stretch" 
+                                        HorizontalAlignment="Stretch"/>
                     </Grid>
                 </Grid>
             </Grid>

@@ -105,9 +105,43 @@ namespace WpfWidgets
 
     public class FirebaseSyncService
     {
-        private static readonly string GoogleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? "YOUR_GOOGLE_CLIENT_ID";
-        private static readonly string GoogleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? "YOUR_GOOGLE_CLIENT_SECRET";
-        private static readonly string FirebaseApiKey = Environment.GetEnvironmentVariable("FIREBASE_API_KEY") ?? "YOUR_FIREBASE_API_KEY";
+        private static readonly string GoogleClientId;
+        private static readonly string GoogleClientSecret;
+        private static readonly string FirebaseApiKey;
+
+        static FirebaseSyncService()
+        {
+            string clientId = "YOUR_GOOGLE_CLIENT_ID";
+            string clientSecret = "YOUR_GOOGLE_CLIENT_SECRET";
+            string apiKey = "YOUR_FIREBASE_API_KEY";
+
+            try
+            {
+                string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+                if (File.Exists(settingsPath))
+                {
+                    string json = File.ReadAllText(settingsPath);
+                    using (var doc = JsonDocument.Parse(json))
+                    {
+                        var root = doc.RootElement;
+                        if (root.TryGetProperty("GoogleClientId", out var cid))
+                            clientId = cid.GetString() ?? clientId;
+                        if (root.TryGetProperty("GoogleClientSecret", out var cs))
+                            clientSecret = cs.GetString() ?? clientSecret;
+                        if (root.TryGetProperty("FirebaseApiKey", out var ak))
+                            apiKey = ak.GetString() ?? apiKey;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[FirebaseSyncService] Failed to load appsettings.json: {ex.Message}");
+            }
+
+            GoogleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? clientId;
+            GoogleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? clientSecret;
+            FirebaseApiKey = Environment.GetEnvironmentVariable("FIREBASE_API_KEY") ?? apiKey;
+        }
         
         private readonly HttpClient _httpClient;
         private readonly DispatcherTimer _syncTimer;

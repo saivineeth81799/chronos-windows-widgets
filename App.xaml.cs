@@ -522,6 +522,18 @@ namespace WpfWidgets
             System.Windows.Application.Current.Resources["WidgetBackground"] = newBrush;
             LogHelper.Log($"[App] Widget background opacity applied: {opacity:F2} using base color: {baseColor}");
         }
+
+        public void ApplyWidgetBlur()
+        {
+            bool enableBlur = WidgetConfig.Current.WidgetBlurEnabled;
+
+            if (_clockWindow != null) DesktopWindowHelper.ApplyBlurState(_clockWindow, enableBlur);
+            if (_calendarWindow != null) DesktopWindowHelper.ApplyBlurState(_calendarWindow, enableBlur);
+            if (_tasksWindow != null) DesktopWindowHelper.ApplyBlurState(_tasksWindow, enableBlur);
+            if (_weatherWindow != null) DesktopWindowHelper.ApplyBlurState(_weatherWindow, enableBlur);
+
+            LogHelper.Log($"[App] Widget frosted glass blur state applied: {enableBlur}");
+        }
     }
 
     /// <summary>

@@ -9,6 +9,10 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>app-icon-light.ico</ApplicationIcon>
+    <AssemblyTitle>Chronos Widgets</AssemblyTitle>
+    <Product>Chronos Widgets</Product>
+    <Description>Chronos Windows Widgets Application</Description>
+    <Company>Chronos</Company>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,9 +22,21 @@
     <Resource Include="app-icon-dark.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="play-store.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="app-store.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Fonts\MaterialSymbolsOutlined.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

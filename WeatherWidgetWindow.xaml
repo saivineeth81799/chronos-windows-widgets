@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Weather Forecast Widget" 
         Height="220" 
-        Width="320"
+        Width="340"
         MinHeight="180"
         MinWidth="250"
         WindowStyle="None" 

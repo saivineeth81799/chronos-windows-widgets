@@ -34,4 +34,13 @@
     <SolidColorBrush x:Key="SidebarHoverBackground" Color="#0AFFFFFF"/>
     <SolidColorBrush x:Key="SidebarActiveBackground" Color="#1AFFFFFF"/>
     <SolidColorBrush x:Key="SidebarUncheckedForeground" Color="#FFCCCCCC"/>
+    
+    <!-- Store Button dynamic styling -->
+    <SolidColorBrush x:Key="StoreButtonBackground" Color="#FFF5F5F7"/>
+    <SolidColorBrush x:Key="StoreButtonForeground" Color="#FF1A1A1A"/>
+    <SolidColorBrush x:Key="StoreButtonHoverBackground" Color="#FFE5E5EA"/>
+    <SolidColorBrush x:Key="StoreButtonPressedBackground" Color="#FFD1D1D6"/>
+
+    <!-- App Icon dynamic styling -->
+    <BitmapImage x:Key="AppIconImage" UriSource="pack://application:,,,/app-icon-dark.ico"/>
 </ResourceDictionary>

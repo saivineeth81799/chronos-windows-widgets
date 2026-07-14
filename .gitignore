@@ -40,4 +40,5 @@ BundleArtifacts/
 *.appxsym
 *.cer
 *.pfx
-
+# Local app settings and secrets
+appsettings.json

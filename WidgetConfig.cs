@@ -8,8 +8,8 @@ namespace WpfWidgets
     {
         public double ClockPositionX { get; set; } = -1; // -1 means default center-right
         public double ClockPositionY { get; set; } = -1;
-        public double ClockWidth { get; set; } = 320;
-        public double ClockHeight { get; set; } = 180;
+        public double ClockWidth { get; set; } = 340;
+        public double ClockHeight { get; set; } = 145;
         public bool ClockLocked { get; set; } = false;
         public string ClockTheme { get; set; } = "Light"; // Options: Light, Dark, System
         public bool Is24HourFormat { get; set; } = false;
@@ -33,7 +33,7 @@ namespace WpfWidgets
         public double CalendarWidth { get; set; } = 340;
         public double CalendarHeight { get; set; } = 400;
         public bool CalendarLocked { get; set; } = false;
-        public bool CalendarEnabled { get; set; } = true;
+        public bool CalendarEnabled { get; set; } = false;
         public string CalendarUserId { get; set; } = "";
         public string CalendarRefreshTokenEncrypted { get; set; } = "";
         public string CalendarEventsCache { get; set; } = "[]";
@@ -44,7 +44,7 @@ namespace WpfWidgets
         public double TasksWidth { get; set; } = 320;
         public double TasksHeight { get; set; } = 450;
         public bool TasksLocked { get; set; } = false;
-        public bool TasksEnabled { get; set; } = true;
+        public bool TasksEnabled { get; set; } = false;
         public string TasksCache { get; set; } = "[]";
         public string TasksSelectedViewId { get; set; } = "FollowMobile";
         public string TasksCustomViewsCache { get; set; } = "[]";
@@ -52,7 +52,7 @@ namespace WpfWidgets
         // Weather Widget Settings
         public double WeatherPositionX { get; set; } = -1;
         public double WeatherPositionY { get; set; } = -1;
-        public double WeatherWidth { get; set; } = 320;
+        public double WeatherWidth { get; set; } = 340;
         public double WeatherHeight { get; set; } = 220;
         public bool WeatherLocked { get; set; } = false;
         public bool WeatherEnabled { get; set; } = true;
@@ -63,6 +63,7 @@ namespace WpfWidgets
         public bool UseCelsius { get; set; } = false;
 
         public double WidgetOpacity { get; set; } = 0.6;
+        public bool WidgetBlurEnabled { get; set; } = true;
 
         // Google Calendar Multi-Account local integrations
         public System.Collections.Generic.List<GoogleAccountConfig> GoogleAccounts { get; set; } = new();
@@ -168,6 +169,11 @@ namespace WpfWidgets
     {
         private static readonly string AppDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
+            "ChronosWidgets"
+        );
+
+        private static readonly string OldAppDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
             "WindowsWidgets"
         );
         
@@ -182,6 +188,25 @@ namespace WpfWidgets
         {
             try
             {
+                // Migrate configuration from old directory if it exists and new one does not
+                if (Directory.Exists(OldAppDirectory) && !Directory.Exists(AppDirectory))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(AppDirectory);
+                        string oldConfig = Path.Combine(OldAppDirectory, "widget-config.json");
+                        string newConfig = Path.Combine(AppDirectory, "widget-config.json");
+                        if (File.Exists(oldConfig))
+                        {
+                            File.Copy(oldConfig, newConfig, true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[WidgetConfig] Migration failed: {ex.Message}");
+                    }
+                }
+
                 if (File.Exists(ConfigFilePath))
                 {
                     string json = File.ReadAllText(ConfigFilePath);

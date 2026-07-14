@@ -268,11 +268,20 @@ namespace WpfWidgets
 
         private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
         private const int DWMWCP_ROUND = 2;
+        private const int DWMWA_BORDER_COLOR = 34;
 
         /// <summary>
-        /// Enables frosted glass blur effect (Acrylic) behind a window.
+        /// Enables frosted glass blur effect (Acrylic) behind a window based on configuration.
         /// </summary>
         public static void EnableBlur(Window window)
+        {
+            ApplyBlurState(window, WidgetConfig.Current.WidgetBlurEnabled);
+        }
+
+        /// <summary>
+        /// Applies the frosted glass Acrylic blur or disables it dynamically.
+        /// </summary>
+        public static void ApplyBlurState(Window window, bool enable)
         {
             try
             {
@@ -283,8 +292,12 @@ namespace WpfWidgets
                 int cornerPreference = DWMWCP_ROUND;
                 DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
 
+                // Suppress DWM native window border on Windows 11
+                int borderColor = unchecked((int)0xFFFFFFFE);
+                DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, ref borderColor, sizeof(int));
+
                 var accent = new AccentPolicy();
-                accent.AccentState = AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND;
+                accent.AccentState = enable ? AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND : AccentState.ACCENT_DISABLED;
                 accent.GradientColor = 0x01FFFFFF; // Fully transparent tint overlay
 
                 int accentStructSize = Marshal.SizeOf(accent);
@@ -302,7 +315,7 @@ namespace WpfWidgets
             }
             catch (Exception ex)
             {
-                LogHelper.Log($"[DesktopWindowHelper] Failed to enable blur: {ex.Message}");
+                LogHelper.Log($"[DesktopWindowHelper] Failed to apply blur state: {ex.Message}");
             }
         }
 
@@ -318,6 +331,7 @@ namespace WpfWidgets
         /// </summary>
         public static void SetRoundedWindowRegion(Window window, int cornerRadius)
         {
+            return; // Disabled to prevent jagged non-anti-aliased clipping gaps
             try
             {
                 IntPtr hWnd = new WindowInteropHelper(window).Handle;

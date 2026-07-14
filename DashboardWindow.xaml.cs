@@ -158,7 +158,8 @@ namespace WpfWidgets
         }
 
         private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string AppName = "WindowsWidgets";
+        private const string AppName = "ChronosWidgets";
+        private const string OldAppName = "WindowsWidgets";
 
         /// <summary>
         /// Checks the Windows Registry to determine if the application is set to start with Windows.
@@ -173,18 +174,94 @@ namespace WpfWidgets
                     if (key != null)
                     {
                         object? value = key.GetValue(AppName);
-                        StartupBanner.Visibility = (value != null) ? Visibility.Collapsed : Visibility.Visible;
-                        LogHelper.Log($"[Dashboard] Registry check completed. Startup enabled: {value != null}");
+                        if (value == null)
+                        {
+                            object? oldValue = key.GetValue(OldAppName);
+                            if (oldValue != null)
+                            {
+                                try
+                                {
+                                    using (Microsoft.Win32.RegistryKey? writeKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true))
+                                    {
+                                        if (writeKey != null)
+                                        {
+                                            writeKey.SetValue(AppName, oldValue);
+                                            writeKey.DeleteValue(OldAppName, false);
+                                            value = oldValue;
+                                            LogHelper.Log("[Dashboard] Migrated startup registry key from WindowsWidgets to ChronosWidgets.");
+                                        }
+                                    }
+
+                                    try
+                                    {
+                                        using (Microsoft.Win32.RegistryKey? approvedKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", true))
+                                        {
+                                            if (approvedKey != null)
+                                            {
+                                                object? approvedValue = approvedKey.GetValue(OldAppName);
+                                                if (approvedValue != null)
+                                                {
+                                                    approvedKey.SetValue(AppName, approvedValue);
+                                                    approvedKey.DeleteValue(OldAppName, false);
+                                                    LogHelper.Log("[Dashboard] Migrated StartupApproved registry key.");
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        LogHelper.Log($"[Dashboard] Failed to migrate StartupApproved registry key: {ex.Message}");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogHelper.Log($"[Dashboard] Failed to migrate startup registry key: {ex.Message}");
+                                }
+                            }
+                        }
+                        bool isStartupEnabled = value != null;
+
+                        // Check StartupApproved key for Task Manager disabled flag
+                        if (isStartupEnabled)
+                        {
+                            try
+                            {
+                                using (Microsoft.Win32.RegistryKey? approvedKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"))
+                                {
+                                    if (approvedKey != null)
+                                    {
+                                        byte[]? approvedBytes = approvedKey.GetValue(AppName) as byte[];
+                                        if (approvedBytes != null && approvedBytes.Length > 0)
+                                        {
+                                            if ((approvedBytes[0] & 1) != 0)
+                                            {
+                                                isStartupEnabled = false;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                LogHelper.Log($"[Dashboard] Failed to read StartupApproved key: {ex.Message}");
+                            }
+                        }
+
+                        StartupBanner.Visibility = isStartupEnabled ? Visibility.Collapsed : Visibility.Visible;
+                        MobileAppBanner.Visibility = isStartupEnabled ? Visibility.Visible : Visibility.Collapsed;
+                        LogHelper.Log($"[Dashboard] Registry check completed. Startup enabled: {isStartupEnabled}");
                     }
                     else
                     {
                         StartupBanner.Visibility = Visibility.Visible;
+                        MobileAppBanner.Visibility = Visibility.Collapsed;
                     }
                 }
             }
             catch (Exception ex)
             {
                 StartupBanner.Visibility = Visibility.Visible;
+                MobileAppBanner.Visibility = Visibility.Collapsed;
                 LogHelper.Log($"[Dashboard] Failed to read registry startup status: {ex.Message}");
             }
         }
@@ -203,8 +280,26 @@ namespace WpfWidgets
                     }
                 }
                 
-                // Hide banner
+                // Clear StartupApproved blocker so Windows actually launches it
+                try
+                {
+                    using (Microsoft.Win32.RegistryKey? approvedKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", true))
+                    {
+                        if (approvedKey != null)
+                        {
+                            approvedKey.DeleteValue(AppName, false);
+                            approvedKey.DeleteValue(OldAppName, false);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.Log($"[Dashboard] Failed to clear approvedKey: {ex.Message}");
+                }
+                
+                // Hide banner and show mobile app link
                 StartupBanner.Visibility = Visibility.Collapsed;
+                MobileAppBanner.Visibility = Visibility.Visible;
 
                 // Sync the active settings sub-views
                 SyncSettings();
@@ -219,7 +314,20 @@ namespace WpfWidgets
         private void DismissBanner_Click(object sender, RoutedEventArgs e)
         {
             StartupBanner.Visibility = Visibility.Collapsed;
+            MobileAppBanner.Visibility = Visibility.Visible;
             LogHelper.Log("[Dashboard] User dismissed the startup banner.");
+        }
+
+        private void DownloadMobileApp_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://play.google.com/store/apps/details?id=com.calmmind.chronos") { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[Dashboard] Failed to open mobile app link: {ex.Message}");
+            }
         }
     }
 }

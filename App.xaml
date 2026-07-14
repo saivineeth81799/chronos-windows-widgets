@@ -15,10 +15,10 @@
             <!-- SHARED CARD STYLE FOR ALL WIDGETS -->
             <!-- ========================================== -->
             <Style x:Key="OuterGlassCardStyle" TargetType="Border">
-                <Setter Property="Background" Value="{DynamicResource GlassTintBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderBrush}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="CornerRadius" Value="12"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="CornerRadius" Value="8"/>
             </Style>
 
             <Style x:Key="WidgetCardStyle" TargetType="Border">
@@ -26,7 +26,7 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource WidgetBorder}"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="CornerRadius" Value="8"/>
-                <Setter Property="Margin" Value="6"/>
+                <Setter Property="Margin" Value="0"/>
             </Style>
             <!-- GLOBAL CONTROL STYLES FOR ALL SETTINGS VIEWS -->
             <!-- ========================================== -->
