@@ -1552,14 +1552,14 @@ namespace WpfWidgets
         {
             try
             {
-                LogHelper.Log("[FirebaseSync] Syncing Tasks...");
+                LogHelper.Log("[FirebaseSync] SyncTasks started.");
 
                 // 1. Fetch Focus Settings to get the active view ID from mobile
                 string focusSettingsUrl = $"https://firestore.googleapis.com/v1/projects/chronos-9a892/databases/(default)/documents/users/{userId}/preferences/focusSettings";
                 var focusReq = new HttpRequestMessage(HttpMethod.Get, focusSettingsUrl);
                 focusReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", idToken);
                 var focusResp = await _httpClient.SendAsync(focusReq);
-                string activeViewId = null;
+                string? activeViewId = null;
 
                 if (focusResp.IsSuccessStatusCode)
                 {
@@ -1570,6 +1570,11 @@ namespace WpfWidgets
                         if (fields.TryGetProperty("activeViewId", out var avProp) && avProp.TryGetProperty("stringValue", out var avVal))
                             activeViewId = avVal.GetString();
                     }
+                    LogHelper.Log($"[FirebaseSync] focusSettings activeViewId from mobile: '{activeViewId}'");
+                }
+                else
+                {
+                    LogHelper.Log($"[FirebaseSync] focusSettings fetch status code: {focusResp.StatusCode}");
                 }
 
                 // 1b. Fetch all custom views to populate settings options & resolve settings
@@ -1582,13 +1587,18 @@ namespace WpfWidgets
                     var viewsResp = await _httpClient.SendAsync(viewsReq);
 
                     if (viewsResp.IsSuccessStatusCode)
-                      {
+                    {
                         string viewsJson = await viewsResp.Content.ReadAsStringAsync();
                         customViews = ParseFirestoreCustomViews(viewsJson);
+                        LogHelper.Log($"[FirebaseSync] Successfully parsed {customViews.Count} custom views from Firestore.");
                         
                         // Cache custom views list for settings dropdown
                         WidgetConfig.Current.TasksCustomViewsCache = JsonSerializer.Serialize(customViews);
                         WidgetConfig.Save();
+                    }
+                    else
+                    {
+                        LogHelper.Log($"[FirebaseSync] customViews fetch status code: {viewsResp.StatusCode}");
                     }
                 }
                 catch (Exception ex)
@@ -1605,7 +1615,7 @@ namespace WpfWidgets
                 var filterStatuses = new List<string>();
 
                 string selectedViewId = WidgetConfig.Current.TasksSelectedViewId;
-                string targetViewId = null;
+                string? targetViewId = null;
 
                 if (selectedViewId == "FollowMobile")
                 {
@@ -1615,6 +1625,8 @@ namespace WpfWidgets
                 {
                     targetViewId = selectedViewId;
                 }
+
+                LogHelper.Log($"[FirebaseSync] SelectedViewSetting: '{selectedViewId}' -> Resolved targetViewId: '{targetViewId}'");
 
                 if (!string.IsNullOrEmpty(targetViewId))
                 {
@@ -1627,6 +1639,9 @@ namespace WpfWidgets
                         filterCategories = targetView.FilterCategories;
                         filterPriorities = targetView.FilterPriorities;
                         filterStatuses = targetView.FilterStatuses;
+
+                        LogHelper.Log($"[FirebaseSync] Applied Custom View settings: group={groupOption}, sort={sortOption} ({sortDirection}), " +
+                                     $"filterCategoriesCount={filterCategories.Count}, filterPrioritiesCount={filterPriorities.Count}, filterStatusesCount={filterStatuses.Count}");
                     }
                     else
                     {
@@ -1660,24 +1675,43 @@ namespace WpfWidgets
                         }
                     }
                 }
+                LogHelper.Log($"[FirebaseSync] Status labels mapping resolved: " +
+                             $"1='{statusLabels["1"]}', 2='{statusLabels["2"]}', 3='{statusLabels["3"]}'");
 
-                // 3. Fetch Tasks
-                string tasksUrl = $"https://firestore.googleapis.com/v1/projects/chronos-9a892/databases/(default)/documents/users/{userId}/tasks?pageSize=200";
-                var tasksReq = new HttpRequestMessage(HttpMethod.Get, tasksUrl);
+                // 3. Fetch Tasks via runQuery (Only active tasks status 1 or 2)
+                string tasksUrl = $"https://firestore.googleapis.com/v1/projects/chronos-9a892/databases/(default)/documents/users/{userId}:runQuery";
+                var tasksReq = new HttpRequestMessage(HttpMethod.Post, tasksUrl);
                 tasksReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", idToken);
+                
+                string queryJson = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"tasks\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"IN\",\"value\":{\"arrayValue\":{\"values\":[{\"stringValue\":\"1\"},{\"stringValue\":\"2\"}]}}}},\"limit\":200}}";
+                tasksReq.Content = new StringContent(queryJson, System.Text.Encoding.UTF8, "application/json");
+
                 var tasksResp = await _httpClient.SendAsync(tasksReq);
                 var tasks = new List<TaskItem>();
                 if (tasksResp.IsSuccessStatusCode)
                 {
                     string tasksJson = await tasksResp.Content.ReadAsStringAsync();
-                    tasks = ParseFirestoreTasks(tasksJson);
+                    tasks = ParseFirestoreTasksRunQuery(tasksJson);
+                    LogHelper.Log($"[FirebaseSync] Fetched {tasks.Count} raw active tasks from Firestore using runQuery.");
+                }
+                else
+                {
+                    string errContent = await tasksResp.Content.ReadAsStringAsync();
+                    LogHelper.Log($"[FirebaseSync] Failed to fetch tasks via runQuery: {tasksResp.StatusCode} - {errContent}");
                 }
 
                 // 4. Process Tasks (Filter active tasks - Status "1" or "2")
                 var activeStatuses = new HashSet<string> { "1", "2" };
                 var activeTasks = tasks.FindAll(t => activeStatuses.Contains(t.Status));
+                LogHelper.Log($"[FirebaseSync] Active tasks count (status '1' or '2'): {activeTasks.Count}");
 
-                bool hasActiveView = !string.IsNullOrEmpty(activeViewId);
+                // Log names and status of active tasks for debugging
+                foreach (var at in activeTasks)
+                {
+                    LogHelper.Log($"  -> Active Task: '{at.Title}' (ID={at.Id}, Status={at.Status}, Priority={at.Priority}, Category={at.Category})");
+                }
+
+                bool hasActiveView = !string.IsNullOrEmpty(targetViewId);
 
                 if (hasActiveView)
                 {
@@ -1686,15 +1720,18 @@ namespace WpfWidgets
                     {
                         var lowerCats = filterCategories.ConvertAll(c => c.ToLower());
                         activeTasks = activeTasks.FindAll(t => lowerCats.Contains((t.Category ?? "").ToLower()));
+                        LogHelper.Log($"[FirebaseSync] Tasks after category filter (count={filterCategories.Count}): {activeTasks.Count}");
                     }
                     if (filterPriorities.Count > 0)
                     {
                         var lowerPris = filterPriorities.ConvertAll(p => p.ToLower());
                         activeTasks = activeTasks.FindAll(t => lowerPris.Contains((t.Priority ?? "").ToLower()));
+                        LogHelper.Log($"[FirebaseSync] Tasks after priority filter (count={filterPriorities.Count}): {activeTasks.Count}");
                     }
                     if (filterStatuses.Count > 0)
                     {
                         activeTasks = activeTasks.FindAll(t => filterStatuses.Contains(t.Status));
+                        LogHelper.Log($"[FirebaseSync] Tasks after status filter (count={filterStatuses.Count}): {activeTasks.Count}");
                     }
 
                     // Sort Tasks
@@ -1817,6 +1854,8 @@ namespace WpfWidgets
                         }
                     }
                 }
+
+                LogHelper.Log($"[FirebaseSync] Prepared {widgetItems.Count} tasks/headers for the widget list.");
 
                 // Save to Cache
                 string serializedCache = JsonSerializer.Serialize(widgetItems);
@@ -2000,6 +2039,77 @@ namespace WpfWidgets
             catch (Exception ex)
             {
                 LogHelper.Log($"[FirebaseSync] Error parsing firestore tasks: {ex.Message}");
+            }
+            return list;
+        }
+
+        private List<TaskItem> ParseFirestoreTasksRunQuery(string json)
+        {
+            var list = new List<TaskItem>();
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var element in root.EnumerateArray())
+                    {
+                        if (element.TryGetProperty("document", out var d))
+                        {
+                            if (d.TryGetProperty("fields", out var fields) && d.TryGetProperty("name", out var nameProp))
+                            {
+                                var task = new TaskItem();
+                                string fullPath = nameProp.GetString() ?? "";
+                                task.Id = fullPath.Substring(fullPath.LastIndexOf('/') + 1);
+
+                                if (fields.TryGetProperty("title", out var titleProp) && titleProp.TryGetProperty("stringValue", out var titleVal))
+                                    task.Title = titleVal.GetString() ?? "";
+
+                                if (fields.TryGetProperty("status", out var statProp) && statProp.TryGetProperty("stringValue", out var statVal))
+                                    task.Status = statVal.GetString() ?? "1";
+
+                                if (fields.TryGetProperty("priority", out var priProp) && priProp.TryGetProperty("stringValue", out var priVal))
+                                    task.Priority = priVal.GetString() ?? "low";
+
+                                if (fields.TryGetProperty("category", out var catProp) && catProp.TryGetProperty("stringValue", out var catVal))
+                                    task.Category = catVal.GetString() ?? "";
+
+                                if (fields.TryGetProperty("description", out var descProp) && descProp.TryGetProperty("stringValue", out var descVal))
+                                    task.Description = descVal.GetString() ?? "";
+
+                                if (fields.TryGetProperty("startDate", out var sdProp))
+                                {
+                                    if (sdProp.TryGetProperty("integerValue", out var sdStr) && long.TryParse(sdStr.GetString(), out long sdInt))
+                                        task.StartDate = sdInt;
+                                    else if (sdProp.TryGetProperty("doubleValue", out var sdDouble))
+                                        task.StartDate = (long)sdDouble.GetDouble();
+                                }
+
+                                if (fields.TryGetProperty("dueDate", out var ddProp))
+                                {
+                                    if (ddProp.TryGetProperty("integerValue", out var ddStr) && long.TryParse(ddStr.GetString(), out long ddInt))
+                                        task.DueDate = ddInt;
+                                    else if (ddProp.TryGetProperty("doubleValue", out var ddDouble))
+                                        task.DueDate = (long)ddDouble.GetDouble();
+                                }
+
+                                if (fields.TryGetProperty("createdAt", out var crProp))
+                                {
+                                    if (crProp.TryGetProperty("integerValue", out var crStr) && long.TryParse(crStr.GetString(), out long crInt))
+                                        task.CreatedAt = crInt;
+                                    else if (crProp.TryGetProperty("doubleValue", out var crDouble))
+                                        task.CreatedAt = (long)crDouble.GetDouble();
+                                }
+
+                                list.Add(task);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[FirebaseSync] Error parsing firestore runQuery tasks: {ex.Message}");
             }
             return list;
         }

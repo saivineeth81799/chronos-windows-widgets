@@ -28,9 +28,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "D:\chronos-widgets\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish\WpfWidgets.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "WpfWidgets-SelfContained\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
 ; Use onlyifdoesntexist to prevent overwriting user credentials on future updates
-Source: "D:\chronos-widgets\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
+Source: "WpfWidgets-SelfContained\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
