@@ -9,7 +9,7 @@
   <Identity
     Name="chronosbycalmmind.chronoswidgets"
     Publisher="CN=F8F34C54-A334-46A8-A211-7375279AD048"
-    Version="1.0.19.0" />
+    Version="1.0.20.0" />
 
   <Properties>
     <DisplayName>Chronos Widgets</DisplayName>
@@ -22,7 +22,7 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="en-US"/>
   </Resources>
 
   <Applications>
