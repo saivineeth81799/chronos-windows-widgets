@@ -122,7 +122,7 @@ namespace WpfWidgets
                             if (enable)
                             {
                                 string exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WpfWidgets.exe");
-                                key.SetValue(AppName, $"\"{exePath}\"");
+                                key.SetValue(AppName, $"\"{exePath}\" --startup");
 
                                 try
                                 {

@@ -37,6 +37,24 @@ namespace WpfWidgets
                 return;
             }
 
+            // Check command line arguments for startup flags
+            bool isSystemStartup = false;
+            if (e.Args != null)
+            {
+                foreach (var arg in e.Args)
+                {
+                    string cleanArg = arg.Trim().ToLowerInvariant();
+                    if (cleanArg == "-background" || cleanArg == "/background" || 
+                        cleanArg == "--startup" || cleanArg == "-startup")
+                    {
+                        isSystemStartup = true;
+                        break;
+                    }
+                }
+            }
+
+            LogHelper.Log($"[App] Launch initiated. IsSystemStartup: {isSystemStartup}");
+
             // Start background task to listen for secondary instance launches
             System.Threading.Tasks.Task.Run(() =>
             {
@@ -136,6 +154,12 @@ namespace WpfWidgets
 
             // 10. Force initial icon update matching OS theme
             UpdateTrayAndWindowIcons();
+
+            // Show dashboard on manual (non-system-startup) launches
+            if (!isSystemStartup)
+            {
+                ShowDashboard();
+            }
         }
 
         private void InitializeSystemTray()
