@@ -25,6 +25,13 @@ namespace WpfWidgets
 
             // Evaluate startup status to determine banner visibility
             CheckStartupBanner();
+
+            // Prevent window destruction on close, hide instead
+            Closing += (s, e) =>
+            {
+                e.Cancel = true;
+                Hide();
+            };
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

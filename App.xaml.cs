@@ -20,9 +20,50 @@ namespace WpfWidgets
         public WeatherWidgetWindow? WeatherWidgetWindow => _weatherWindow;
         public FirebaseSyncService? SyncService { get; private set; }
         private string _lastIconName = "";
+        private System.Threading.EventWaitHandle? _instanceEvent;
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Single-instance check
+            bool createdNew;
+            _instanceEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, "ChronosWidgetsLaunchEvent", out createdNew);
+
+            if (!createdNew)
+            {
+                // Signal the primary instance to show the settings dashboard
+                _instanceEvent.Set();
+                _instanceEvent.Dispose();
+                Shutdown();
+                return;
+            }
+
+            // Start background task to listen for secondary instance launches
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        if (_instanceEvent.WaitOne())
+                        {
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                ShowDashboard();
+                            }));
+                        }
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        LogHelper.Log($"[App] Launch event wait exception: {ex.Message}");
+                        System.Threading.Thread.Sleep(1000);
+                    }
+                }
+            });
+
             base.OnStartup(e);
 
             // 1. Load application config
@@ -354,6 +395,16 @@ namespace WpfWidgets
             {
                 _notifyIcon.Visible = false;
                 _notifyIcon.Dispose();
+            }
+
+            // Dispose named event wait handle
+            if (_instanceEvent != null)
+            {
+                try
+                {
+                    _instanceEvent.Dispose();
+                }
+                catch { }
             }
 
             base.OnExit(e);
