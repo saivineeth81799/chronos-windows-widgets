@@ -42,3 +42,18 @@ BundleArtifacts/
 *.pfx
 # Local app settings and secrets
 appsettings.json
+
+# Build artifacts & installers
+ChronosWidgetsSetup.exe
+WpfWidgets-SelfContained/
+WpfWidgets-SelfContained.zip
+WpfWidgets-Release.zip
+publish/
+msix-layout/
+
+# Scripts
+dotnet-install.ps1
+
+# Logs
+debug.log
+*.log

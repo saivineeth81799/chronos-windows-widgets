@@ -1,0 +1,148 @@
+name: Build MSIX Package
+
+on:
+  push:
+    tags:
+      - 'v*'           # Trigger on version tags like v1.0.15
+  workflow_dispatch:    # Allow manual trigger from GitHub Actions UI
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'WpfWidgets.csproj'
+  PACKAGE_PROJECT_PATH: 'WpfWidgets.Package'
+  CONFIGURATION: 'Release'
+  PLATFORM: 'x64'
+
+jobs:
+  build-msix:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Extract version from Package.appxmanifest
+      - name: Extract version from manifest
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$manifest = Get-Content "${{ env.PACKAGE_PROJECT_PATH }}/Package.appxmanifest"
+          $version = $manifest.Package.Identity.Version
+          echo "APP_VERSION=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Package version: $version"
+
+      # Publish the WPF app as self-contained for x64
+      - name: Publish WPF application
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} `
+            --configuration ${{ env.CONFIGURATION }} `
+            --runtime win-x64 `
+            --self-contained true `
+            --output ./publish
+        shell: pwsh
+
+      # Prepare the MSIX package layout folder
+      - name: Prepare MSIX layout
+        shell: pwsh
+        run: |
+          $layoutDir = "./msix-layout"
+          New-Item -ItemType Directory -Path $layoutDir -Force | Out-Null
+
+          # Copy published app files
+          Copy-Item -Path "./publish/*" -Destination $layoutDir -Recurse -Force
+
+          # Copy the AppxManifest
+          Copy-Item -Path "${{ env.PACKAGE_PROJECT_PATH }}/Package.appxmanifest" -Destination "$layoutDir/AppxManifest.xml" -Force
+
+          # Copy Store image assets into an Images subfolder
+          $imagesDir = "$layoutDir/Images"
+          New-Item -ItemType Directory -Path $imagesDir -Force | Out-Null
+          Copy-Item -Path "${{ env.PACKAGE_PROJECT_PATH }}/Images/*" -Destination $imagesDir -Recurse -Force
+
+          Write-Host "MSIX layout prepared at $layoutDir"
+          Get-ChildItem $layoutDir | Format-Table Name, Length
+
+      # Find makeappx.exe from the Windows SDK on the runner
+      - name: Locate Windows SDK tools
+        id: sdk
+        shell: pwsh
+        run: |
+          $sdkBin = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Directory |
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+            Sort-Object Name -Descending |
+            Select-Object -First 1
+
+          $makeappx = Join-Path $sdkBin.FullName "x64\makeappx.exe"
+          $signtool = Join-Path $sdkBin.FullName "x64\signtool.exe"
+
+          if (-not (Test-Path $makeappx)) {
+            throw "makeappx.exe not found at: $makeappx"
+          }
+
+          echo "MAKEAPPX=$makeappx" >> $env:GITHUB_OUTPUT
+          echo "SIGNTOOL=$signtool" >> $env:GITHUB_OUTPUT
+          Write-Host "Using SDK tools from: $($sdkBin.FullName)"
+
+      # Create the MSIX package
+      - name: Create MSIX package
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.APP_VERSION }}"
+          $outputMsix = "./ChronosWidgets_${version}_x64.msix"
+
+          & "${{ steps.sdk.outputs.MAKEAPPX }}" pack /d "./msix-layout" /p $outputMsix /o
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "makeappx pack failed with exit code $LASTEXITCODE"
+          }
+
+          echo "MSIX_PATH=$outputMsix" >> $env:GITHUB_ENV
+          Write-Host "MSIX created: $outputMsix"
+          Write-Host "Size: $((Get-Item $outputMsix).Length / 1MB) MB"
+
+      # Create a self-signed certificate for testing/sideloading
+      # (Microsoft Store re-signs with their certificate during submission)
+      - name: Sign MSIX package
+        shell: pwsh
+        run: |
+          # Create a self-signed certificate matching the Publisher in the manifest
+          $cert = New-SelfSignedCertificate `
+            -Type Custom `
+            -Subject "CN=F8F34C54-A334-46A8-A211-7375279AD048" `
+            -KeyUsage DigitalSignature `
+            -FriendlyName "Chronos Widgets Dev Certificate" `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+
+          $thumbprint = $cert.Thumbprint
+
+          # Export the PFX (for signing)
+          $pfxPassword = ConvertTo-SecureString -String "ChronosTemp123!" -Force -AsPlainText
+          $pfxPath = "./signing-cert.pfx"
+          Export-PfxCertificate -Cert "Cert:\CurrentUser\My\$thumbprint" -FilePath $pfxPath -Password $pfxPassword | Out-Null
+
+          # Sign the MSIX
+          & "${{ steps.sdk.outputs.SIGNTOOL }}" sign /fd SHA256 /a /f $pfxPath /p "ChronosTemp123!" "${{ env.MSIX_PATH }}"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "signtool sign failed with exit code $LASTEXITCODE"
+          }
+
+          # Clean up certificate
+          Remove-Item $pfxPath -Force
+          Remove-Item "Cert:\CurrentUser\My\$thumbprint" -Force
+
+          Write-Host "MSIX signed successfully"
+
+      # Upload the MSIX as a build artifact
+      - name: Upload MSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChronosWidgets-MSIX
+          path: ${{ env.MSIX_PATH }}
+          retention-days: 90

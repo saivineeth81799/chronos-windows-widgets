@@ -157,158 +157,42 @@ namespace WpfWidgets
             _weatherSettingsView?.RefreshSettings();
         }
 
-        private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string AppName = "ChronosWidgets";
-        private const string OldAppName = "WindowsWidgets";
-
         /// <summary>
-        /// Checks the Windows Registry to determine if the application is set to start with Windows.
+        /// Checks if the application is set to start with Windows.
         /// If not, displays a warning banner at the top of the dashboard content pane.
         /// </summary>
         public void CheckStartupBanner()
         {
-            try
+            _ = System.Threading.Tasks.Task.Run(async () =>
             {
-                using (Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RegistryKeyPath))
+                bool isStartupEnabled = await StartupHelper.IsStartupEnabledAsync();
+                _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (key != null)
-                    {
-                        object? value = key.GetValue(AppName);
-                        if (value == null)
-                        {
-                            object? oldValue = key.GetValue(OldAppName);
-                            if (oldValue != null)
-                            {
-                                try
-                                {
-                                    using (Microsoft.Win32.RegistryKey? writeKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true))
-                                    {
-                                        if (writeKey != null)
-                                        {
-                                            writeKey.SetValue(AppName, oldValue);
-                                            writeKey.DeleteValue(OldAppName, false);
-                                            value = oldValue;
-                                            LogHelper.Log("[Dashboard] Migrated startup registry key from WindowsWidgets to ChronosWidgets.");
-                                        }
-                                    }
-
-                                    try
-                                    {
-                                        using (Microsoft.Win32.RegistryKey? approvedKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", true))
-                                        {
-                                            if (approvedKey != null)
-                                            {
-                                                object? approvedValue = approvedKey.GetValue(OldAppName);
-                                                if (approvedValue != null)
-                                                {
-                                                    approvedKey.SetValue(AppName, approvedValue);
-                                                    approvedKey.DeleteValue(OldAppName, false);
-                                                    LogHelper.Log("[Dashboard] Migrated StartupApproved registry key.");
-                                                }
-                                            }
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        LogHelper.Log($"[Dashboard] Failed to migrate StartupApproved registry key: {ex.Message}");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    LogHelper.Log($"[Dashboard] Failed to migrate startup registry key: {ex.Message}");
-                                }
-                            }
-                        }
-                        bool isStartupEnabled = value != null;
-
-                        // Check StartupApproved key for Task Manager disabled flag
-                        if (isStartupEnabled)
-                        {
-                            try
-                            {
-                                using (Microsoft.Win32.RegistryKey? approvedKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"))
-                                {
-                                    if (approvedKey != null)
-                                    {
-                                        byte[]? approvedBytes = approvedKey.GetValue(AppName) as byte[];
-                                        if (approvedBytes != null && approvedBytes.Length > 0)
-                                        {
-                                            if ((approvedBytes[0] & 1) != 0)
-                                            {
-                                                isStartupEnabled = false;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                LogHelper.Log($"[Dashboard] Failed to read StartupApproved key: {ex.Message}");
-                            }
-                        }
-
-                        StartupBanner.Visibility = isStartupEnabled ? Visibility.Collapsed : Visibility.Visible;
-                        MobileAppBanner.Visibility = isStartupEnabled ? Visibility.Visible : Visibility.Collapsed;
-                        LogHelper.Log($"[Dashboard] Registry check completed. Startup enabled: {isStartupEnabled}");
-                    }
-                    else
-                    {
-                        StartupBanner.Visibility = Visibility.Visible;
-                        MobileAppBanner.Visibility = Visibility.Collapsed;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                StartupBanner.Visibility = Visibility.Visible;
-                MobileAppBanner.Visibility = Visibility.Collapsed;
-                LogHelper.Log($"[Dashboard] Failed to read registry startup status: {ex.Message}");
-            }
+                    StartupBanner.Visibility = isStartupEnabled ? Visibility.Collapsed : Visibility.Visible;
+                    MobileAppBanner.Visibility = isStartupEnabled ? Visibility.Visible : Visibility.Collapsed;
+                }));
+            });
         }
 
         private void EnableStartup_Click(object sender, RoutedEventArgs e)
         {
-            try
+            _ = System.Threading.Tasks.Task.Run(async () =>
             {
-                using (Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true))
+                bool success = await StartupHelper.SetStartupStateAsync(true);
+                _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (key != null)
+                    if (success)
                     {
-                        string exePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WpfWidgets.exe");
-                        key.SetValue(AppName, $"\"{exePath}\"");
-                        LogHelper.Log($"[Dashboard] Startup registered successfully: {exePath}");
+                        StartupBanner.Visibility = Visibility.Collapsed;
+                        MobileAppBanner.Visibility = Visibility.Visible;
+                        SyncSettings();
                     }
-                }
-                
-                // Clear StartupApproved blocker so Windows actually launches it
-                try
-                {
-                    using (Microsoft.Win32.RegistryKey? approvedKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run", true))
+                    else
                     {
-                        if (approvedKey != null)
-                        {
-                            approvedKey.DeleteValue(AppName, false);
-                            approvedKey.DeleteValue(OldAppName, false);
-                        }
+                        System.Windows.MessageBox.Show("Failed to enable Windows startup.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.Log($"[Dashboard] Failed to clear approvedKey: {ex.Message}");
-                }
-                
-                // Hide banner and show mobile app link
-                StartupBanner.Visibility = Visibility.Collapsed;
-                MobileAppBanner.Visibility = Visibility.Visible;
-
-                // Sync the active settings sub-views
-                SyncSettings();
-            }
-            catch (Exception ex)
-            {
-                LogHelper.Log($"[Dashboard] Failed to enable startup registry: {ex.Message}");
-                System.Windows.MessageBox.Show($"Failed to enable startup: {ex.Message}", "Registry Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                }));
+            });
         }
 
         private void DismissBanner_Click(object sender, RoutedEventArgs e)
