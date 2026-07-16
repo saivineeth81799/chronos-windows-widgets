@@ -10,6 +10,7 @@ namespace WpfWidgets
     {
         // Delegates
         private delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+        private delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
 
         // Win32 API Imports
         [DllImport("user32.dll", SetLastError = true)]
@@ -44,6 +45,20 @@ namespace WpfWidgets
         [DllImport("user32.dll")]
         private static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         // Constants
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TRANSPARENT = 0x00000020;
@@ -51,13 +66,27 @@ namespace WpfWidgets
 
         // SetWindowPos Constants
         private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOACTIVATE = 0x0010;
+        private const uint SWP_SHOWWINDOW = 0x0040;
 
         private const uint GA_ROOT = 2;
 
         private const uint WM_SPAWN_WORKER = 0x052C;
+
+        // Show Desktop detection constants
+        private const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+        private const uint WINEVENT_OUTOFCONTEXT = 0x0000;
+        private const int SW_RESTORE = 9;
+
+        // Tracked widget windows and hook state
+        private static readonly System.Collections.Generic.List<Window> _trackedWindows = new();
+        private static IntPtr _winEventHook = IntPtr.Zero;
+        private static WinEventDelegate? _winEventProc; // prevent GC collection of delegate
+        private static bool _isShowingDesktop = false;
 
         /// <summary>
         /// Finds the active WorkerW window behind the desktop icons.
@@ -170,6 +199,18 @@ namespace WpfWidgets
                 // 3. Force the window to the bottom of the Z-order
                 PushToBottom(window);
 
+                // 4. Track this window for Show Desktop recovery
+                lock (_trackedWindows)
+                {
+                    if (!_trackedWindows.Contains(window))
+                    {
+                        _trackedWindows.Add(window);
+                    }
+                }
+
+                // 5. Start the global Show Desktop watcher (once)
+                StartShowDesktopWatcher();
+
                 return true;
             }
             catch (Exception ex)
@@ -177,6 +218,151 @@ namespace WpfWidgets
                 LogHelper.Log($"[DesktopWindowHelper] Exception during attach: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"[DesktopWindowHelper] Failed to attach: {ex.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Installs a global WinEvent hook to detect Show Desktop (Win+D / gesture).
+        /// When the shell's WorkerW or Progman becomes the foreground window, all tracked
+        /// widgets are force-restored and made temporarily topmost so they remain visible.
+        /// When a normal app takes focus, widgets are pushed back to the bottom Z-order.
+        /// </summary>
+        private static void StartShowDesktopWatcher()
+        {
+            if (_winEventHook != IntPtr.Zero) return; // already installed
+
+            // Store delegate in a field to prevent garbage collection
+            _winEventProc = new WinEventDelegate(OnForegroundChanged);
+
+            _winEventHook = SetWinEventHook(
+                EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
+                IntPtr.Zero, _winEventProc,
+                0, 0, WINEVENT_OUTOFCONTEXT);
+
+            if (_winEventHook != IntPtr.Zero)
+            {
+                LogHelper.Log("[DesktopWindowHelper] Show Desktop watcher installed.");
+            }
+            else
+            {
+                LogHelper.Log("[DesktopWindowHelper] WARNING: Failed to install Show Desktop watcher.");
+            }
+        }
+
+        /// <summary>
+        /// Callback fired whenever the foreground window changes.
+        /// Detects Show Desktop by checking if WorkerW or Progman became foreground.
+        /// </summary>
+        private static void OnForegroundChanged(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
+        {
+            try
+            {
+                if (hwnd == IntPtr.Zero) return;
+
+                // Identify the class name of the new foreground window
+                StringBuilder className = new StringBuilder(256);
+                GetClassName(hwnd, className, className.Capacity);
+                string cls = className.ToString();
+
+                bool isDesktopForeground = cls == "WorkerW" || cls == "Progman";
+
+                if (isDesktopForeground && !_isShowingDesktop)
+                {
+                    _isShowingDesktop = true;
+                    LogHelper.Log("[DesktopWindowHelper] Show Desktop detected — restoring widgets.");
+
+                    // Force all tracked widgets visible and temporarily topmost
+                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        lock (_trackedWindows)
+                        {
+                            foreach (var window in _trackedWindows)
+                            {
+                                try
+                                {
+                                    if (!window.IsVisible) continue;
+
+                                    IntPtr hWnd = new WindowInteropHelper(window).Handle;
+                                    if (hWnd == IntPtr.Zero) continue;
+
+                                    // Force restore in case the shell minimized it
+                                    if (window.WindowState == WindowState.Minimized)
+                                    {
+                                        window.WindowState = WindowState.Normal;
+                                    }
+
+                                    // Temporarily make topmost so it renders above the desktop layer
+                                    SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0,
+                                        SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+
+                                    // Immediately revert to non-topmost and push to bottom,
+                                    // this ensures the widget is visible but not blocking other apps
+                                    SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+                                        SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+                                    SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0,
+                                        SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogHelper.Log($"[DesktopWindowHelper] Failed to restore widget: {ex.Message}");
+                                }
+                            }
+                        }
+                    }));
+                }
+                else if (!isDesktopForeground && _isShowingDesktop)
+                {
+                    _isShowingDesktop = false;
+                    LogHelper.Log("[DesktopWindowHelper] App gained focus — pushing widgets to bottom.");
+
+                    // Normal app took focus, ensure widgets are back at the bottom
+                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        lock (_trackedWindows)
+                        {
+                            foreach (var window in _trackedWindows)
+                            {
+                                try
+                                {
+                                    PushToBottom(window);
+                                }
+                                catch { }
+                            }
+                        }
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[DesktopWindowHelper] OnForegroundChanged exception: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Removes a window from tracking and cleans up the hook if no windows remain.
+        /// </summary>
+        public static void DetachFromDesktop(Window window)
+        {
+            lock (_trackedWindows)
+            {
+                _trackedWindows.Remove(window);
+            }
+        }
+
+        /// <summary>
+        /// Unhooks the global event listener. Call on app exit.
+        /// </summary>
+        public static void StopShowDesktopWatcher()
+        {
+            if (_winEventHook != IntPtr.Zero)
+            {
+                UnhookWinEvent(_winEventHook);
+                _winEventHook = IntPtr.Zero;
+                LogHelper.Log("[DesktopWindowHelper] Show Desktop watcher unhooked.");
+            }
+            lock (_trackedWindows)
+            {
+                _trackedWindows.Clear();
             }
         }
 

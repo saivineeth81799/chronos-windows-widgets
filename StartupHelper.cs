@@ -12,17 +12,49 @@ namespace WpfWidgets
         private const string OldAppName = "WindowsWidgets";
         private const string PackagedTaskId = "ChronosWidgetsStartup";
 
+        private static bool? _isPackagedCache;
+
         public static bool IsPackaged()
         {
+            if (_isPackagedCache.HasValue)
+                return _isPackagedCache.Value;
+
+            // Primary check: use the Windows.ApplicationModel API
             try
             {
-                return Windows.ApplicationModel.Package.Current != null && 
-                       Windows.ApplicationModel.Package.Current.Id != null;
+                var package = Windows.ApplicationModel.Package.Current;
+                if (package?.Id != null)
+                {
+                    LogHelper.Log($"[StartupHelper] IsPackaged=true (FamilyName={package.Id.FamilyName})");
+                    _isPackagedCache = true;
+                    return true;
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                LogHelper.Log($"[StartupHelper] Package.Current check failed: {ex.Message}");
             }
+
+            // Fallback check: packaged apps run from the WindowsApps directory
+            try
+            {
+                string? processPath = Environment.ProcessPath ?? AppDomain.CurrentDomain.BaseDirectory;
+                if (!string.IsNullOrEmpty(processPath) &&
+                    processPath.Contains("WindowsApps", StringComparison.OrdinalIgnoreCase))
+                {
+                    LogHelper.Log($"[StartupHelper] IsPackaged=true (detected WindowsApps path: {processPath})");
+                    _isPackagedCache = true;
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[StartupHelper] Fallback path check failed: {ex.Message}");
+            }
+
+            LogHelper.Log("[StartupHelper] IsPackaged=false (unpackaged/Inno Setup deployment)");
+            _isPackagedCache = false;
+            return false;
         }
 
         public static async Task<bool> IsStartupEnabledAsync()
@@ -107,7 +139,7 @@ namespace WpfWidgets
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.Log($"[StartupHelper] Failed to set packaged startup: {ex.Message}");
+                    LogHelper.Log($"[StartupHelper] CRITICAL: Failed to set packaged startup: {ex.Message}. Registry fallback blocked.");
                     return false;
                 }
             }

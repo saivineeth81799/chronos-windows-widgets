@@ -36,5 +36,35 @@ Source: "WpfWidgets-SelfContained\appsettings.json"; DestDir: "{app}"; Flags: ig
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
+[UninstallDelete]
+; Remove app data directories created at runtime
+Type: filesandordirs; Name: "{localappdata}\ChronosWidgets"
+Type: filesandordirs; Name: "{localappdata}\WindowsWidgets"
+
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    { Remove startup registry entries created by the app at runtime (both 32-bit and 64-bit registry views) }
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Run', 'ChronosWidgets');
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Run', 'WindowsWidgets');
+    RegDeleteValue(HKEY_LOCAL_MACHINE, 'Software\Microsoft\Windows\CurrentVersion\Run', 'ChronosWidgets');
+    RegDeleteValue(HKEY_LOCAL_MACHINE, 'Software\Microsoft\Windows\CurrentVersion\Run', 'WindowsWidgets');
+
+    { Remove Windows startup approval entries }
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run', 'ChronosWidgets');
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run', 'WindowsWidgets');
+    RegDeleteValue(HKEY_LOCAL_MACHINE, 'Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run', 'ChronosWidgets');
+    RegDeleteValue(HKEY_LOCAL_MACHINE, 'Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run', 'WindowsWidgets');
+
+    { Remove startup entries from Wow6432Node if present }
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run', 'ChronosWidgets');
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run', 'WindowsWidgets');
+    RegDeleteValue(HKEY_LOCAL_MACHINE, 'Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run', 'ChronosWidgets');
+    RegDeleteValue(HKEY_LOCAL_MACHINE, 'Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run', 'WindowsWidgets');
+  end;
+end;

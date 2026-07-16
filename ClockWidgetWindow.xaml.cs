@@ -101,8 +101,8 @@ namespace WpfWidgets
             // 4. Setup resize hook for borderless window resizing
             SetupResizeHook();
 
-            // 5. Initial layout sync for multiple world clocks
-            RefreshClocksLayout();
+            // 5. Initial layout sync for multiple world clocks (don't auto-resize, respect saved dimensions)
+            RefreshClocksLayout(autoResize: false);
         }
 
         private void ClockWidgetWindow_StateChanged(object? sender, EventArgs e)
@@ -147,7 +147,7 @@ namespace WpfWidgets
             DesktopWindowHelper.PushToBottom(this);
         }
 
-        public void RefreshClocksLayout()
+        public void RefreshClocksLayout(bool autoResize = true)
         {
             bool showBottom = WidgetConfig.Current.Clock2Enabled || WidgetConfig.Current.Clock3Enabled;
 
@@ -196,18 +196,21 @@ namespace WpfWidgets
                                           WidgetConfig.Current.Clock1Label != "Local Time";
             Clock1Label.Visibility = hasCustomPrimaryLabel ? Visibility.Visible : Visibility.Collapsed;
 
-            // Dynamic height adjustments
-            double targetHeight = showBottom ? 210 : 145;
-            double targetWidth = 340;
-
-            if (Math.Abs(Height - targetHeight) > 1 || Math.Abs(Width - targetWidth) > 1)
+            // Dynamic height adjustments — only when clock config changes, not on startup
+            if (autoResize)
             {
-                Height = targetHeight;
-                Width = targetWidth;
+                double targetHeight = showBottom ? 210 : 145;
+                double targetWidth = 340;
 
-                WidgetConfig.Current.ClockWidth = Width;
-                WidgetConfig.Current.ClockHeight = Height;
-                WidgetConfig.Save();
+                if (Math.Abs(Height - targetHeight) > 1 || Math.Abs(Width - targetWidth) > 1)
+                {
+                    Height = targetHeight;
+                    Width = targetWidth;
+
+                    WidgetConfig.Current.ClockWidth = Width;
+                    WidgetConfig.Current.ClockHeight = Height;
+                    WidgetConfig.Save();
+                }
             }
 
             UpdateClock();

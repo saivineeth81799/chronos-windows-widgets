@@ -411,6 +411,9 @@ namespace WpfWidgets
             // Unsubscribe from Windows theme updates to prevent memory leaks
             SystemEvents.UserPreferenceChanged -= SystemEvents_UserPreferenceChanged;
 
+            // Unhook the Show Desktop watcher
+            DesktopWindowHelper.StopShowDesktopWatcher();
+
             // Stop background calendar sync
             SyncService?.StopBackgroundSync();
 

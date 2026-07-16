@@ -167,10 +167,29 @@ namespace WpfWidgets
 
     public static class WidgetConfig
     {
-        private static readonly string AppDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
-            "ChronosWidgets"
-        );
+        private static readonly string AppDirectory = GetAppDirectory();
+
+        private static string GetAppDirectory()
+        {
+            if (StartupHelper.IsPackaged())
+            {
+                try
+                {
+                    // Directly target the package's local storage folder
+                    return Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[WidgetConfig] Failed to get packaged LocalFolder path: {ex.Message}");
+                }
+            }
+
+            // Fallback for unpackaged execution
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
+                "ChronosWidgets"
+            );
+        }
 
         private static readonly string OldAppDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
