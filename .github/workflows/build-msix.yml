@@ -118,39 +118,32 @@ jobs:
           Write-Host "MSIX created: $outputMsix"
           Write-Host "Size: $((Get-Item $outputMsix).Length / 1MB) MB"
 
-      # Create a self-signed certificate for testing/sideloading
-      # (Microsoft Store re-signs with their certificate during submission)
+      # Re-use the permanent certificate to sign the MSIX package
       - name: Sign MSIX package
+        env:
+          SIGNING_CERT_BASE64: ${{ secrets.SIGNING_CERT_BASE64 }}
         shell: pwsh
         run: |
-          # Create a self-signed certificate matching the Publisher in the manifest
-          $cert = New-SelfSignedCertificate `
-            -Type Custom `
-            -Subject "CN=F8F34C54-A334-46A8-A211-7375279AD048" `
-            -KeyUsage DigitalSignature `
-            -FriendlyName "Chronos Widgets Dev Certificate" `
-            -CertStoreLocation "Cert:\CurrentUser\My" `
-            -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+          if ([string]::IsNullOrEmpty($env:SIGNING_CERT_BASE64)) {
+            throw "SIGNING_CERT_BASE64 secret is not configured in GitHub."
+          }
 
-          $thumbprint = $cert.Thumbprint
-
-          # Export the PFX (for signing)
-          $pfxPassword = ConvertTo-SecureString -String "ChronosTemp123!" -Force -AsPlainText
+          # Decode the certificate PFX file
           $pfxPath = "./signing-cert.pfx"
-          Export-PfxCertificate -Cert "Cert:\CurrentUser\My\$thumbprint" -FilePath $pfxPath -Password $pfxPassword | Out-Null
+          $certBytes = [System.Convert]::FromBase64String($env:SIGNING_CERT_BASE64)
+          [System.IO.File]::WriteAllBytes($pfxPath, $certBytes)
 
-          # Sign the MSIX
-          & "${{ steps.sdk.outputs.SIGNTOOL }}" sign /fd SHA256 /a /f $pfxPath /p "ChronosTemp123!" "${{ env.MSIX_PATH }}"
+          # Sign the MSIX with the permanent certificate
+          & "${{ steps.sdk.outputs.SIGNTOOL }}" sign /fd SHA256 /a /f $pfxPath /p "ChronosWidgetsCert123!" "${{ env.MSIX_PATH }}"
 
           if ($LASTEXITCODE -ne 0) {
             throw "signtool sign failed with exit code $LASTEXITCODE"
           }
 
-          # Clean up certificate
+          # Clean up the certificate from the runner disk
           Remove-Item $pfxPath -Force
-          Remove-Item "Cert:\CurrentUser\My\$thumbprint" -Force
 
-          Write-Host "MSIX signed successfully"
+          Write-Host "MSIX signed successfully with permanent certificate"
 
       # Upload the MSIX as a build artifact
       - name: Upload MSIX artifact
