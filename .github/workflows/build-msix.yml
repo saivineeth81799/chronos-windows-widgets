@@ -38,12 +38,25 @@ jobs:
 
       # Publish the WPF app as self-contained for x64
       - name: Publish WPF application
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         run: |
           dotnet publish ${{ env.PROJECT_PATH }} `
             --configuration ${{ env.CONFIGURATION }} `
             --runtime win-x64 `
             --self-contained true `
             --output ./publish
+
+          # Write appsettings.json dynamically using secrets
+          $settingsJson = @{
+              GoogleClientId = $env:GOOGLE_CLIENT_ID
+              GoogleClientSecret = $env:GOOGLE_CLIENT_SECRET
+              FirebaseApiKey = $env:FIREBASE_API_KEY
+          } | ConvertTo-Json
+
+          Set-Content -Path "./publish/appsettings.json" -Value $settingsJson -Force
         shell: pwsh
 
       # Prepare the MSIX package layout folder
