@@ -172,7 +172,7 @@ namespace WpfWidgets.Views
             var scrollViewer = sender as ScrollViewer;
             if (scrollViewer != null)
             {
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.5));
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.15));
                 e.Handled = true;
             }
         }
