@@ -183,6 +183,20 @@
                                                   Margin="12,3,30,3" 
                                                   VerticalAlignment="Center" 
                                                   HorizontalAlignment="Left"/>
+
+                                <!-- Editable TextBox Area -->
+                                <TextBox Name="PART_EditableTextBox"
+                                         Style="{x:Null}"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Center"
+                                         Margin="12,3,30,3"
+                                         Focusable="True"
+                                         Background="Transparent"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         CaretBrush="{TemplateBinding Foreground}"
+                                         BorderThickness="0"
+                                         Visibility="Collapsed"
+                                         IsReadOnly="{TemplateBinding IsReadOnly}"/>
                                 
                                 <!-- Dropdown Popup -->
                                 <Popup Name="Popup" 
@@ -212,6 +226,13 @@
                                     </Grid>
                                 </Popup>
                             </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEditable" Value="true">
+                                    <Setter Property="IsTabStop" Value="false"/>
+                                    <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>

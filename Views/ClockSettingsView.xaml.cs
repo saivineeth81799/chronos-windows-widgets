@@ -22,15 +22,27 @@ namespace WpfWidgets.Views
                 clock1TimeZones.Add(new TimeZoneItem { Id = tz.Id, DisplayName = tz.DisplayName });
             }
 
-            Clock1TimeZoneCombo.ItemsSource = clock1TimeZones;
+            var clock2TimeZones = new System.Collections.Generic.List<TimeZoneItem>();
+            foreach (var tz in timeZones)
+            {
+                clock2TimeZones.Add(new TimeZoneItem { Id = tz.Id, DisplayName = tz.DisplayName });
+            }
+
+            var clock3TimeZones = new System.Collections.Generic.List<TimeZoneItem>();
+            foreach (var tz in timeZones)
+            {
+                clock3TimeZones.Add(new TimeZoneItem { Id = tz.Id, DisplayName = tz.DisplayName });
+            }
+
+            Clock1TimeZoneCombo.ItemsSource = new System.Windows.Data.ListCollectionView(clock1TimeZones);
             Clock1TimeZoneCombo.DisplayMemberPath = "DisplayName";
             Clock1TimeZoneCombo.SelectedValuePath = "Id";
 
-            Clock2TimeZoneCombo.ItemsSource = timeZones;
+            Clock2TimeZoneCombo.ItemsSource = new System.Windows.Data.ListCollectionView(clock2TimeZones);
             Clock2TimeZoneCombo.DisplayMemberPath = "DisplayName";
             Clock2TimeZoneCombo.SelectedValuePath = "Id";
 
-            Clock3TimeZoneCombo.ItemsSource = timeZones;
+            Clock3TimeZoneCombo.ItemsSource = new System.Windows.Data.ListCollectionView(clock3TimeZones);
             Clock3TimeZoneCombo.DisplayMemberPath = "DisplayName";
             Clock3TimeZoneCombo.SelectedValuePath = "Id";
 
@@ -183,6 +195,61 @@ namespace WpfWidgets.Views
             // Scroll with custom dampened speed and mark handled to suppress native ScrollViewer speed
             scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.08));
             e.Handled = true;
+        }
+
+        private void TimeZoneCombo_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var comboBox = sender as System.Windows.Controls.ComboBox;
+            if (comboBox == null || !_isInitialized) return;
+
+            // Get the internal TextBox inside the ComboBox
+            var textBox = e.OriginalSource as System.Windows.Controls.TextBox;
+            if (textBox == null) return;
+
+            string query = textBox.Text;
+
+            // Get the view associated with this ComboBox's ItemsSource
+            var view = comboBox.ItemsSource as System.Windows.Data.ListCollectionView;
+            if (view == null) return;
+
+            // Temporarily disable selection changed notification to avoid saving partial state
+            _isInitialized = false;
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                view.Filter = null;
+            }
+            else
+            {
+                view.Filter = item =>
+                {
+                    var tz = item as TimeZoneItem;
+                    if (tz == null) return false;
+                    return tz.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase);
+                };
+            }
+
+            _isInitialized = true;
+
+            // Keep the dropdown open to show filter results as typing occurs
+            if (comboBox.IsFocused && !comboBox.IsDropDownOpen)
+            {
+                comboBox.IsDropDownOpen = true;
+            }
+        }
+
+        private void TimeZoneCombo_GotFocus(object sender, RoutedEventArgs e)
+        {
+            var comboBox = sender as System.Windows.Controls.ComboBox;
+            if (comboBox == null) return;
+
+            var view = comboBox.ItemsSource as System.Windows.Data.ListCollectionView;
+            if (view != null)
+            {
+                view.Filter = null;
+            }
+
+            comboBox.IsDropDownOpen = true;
         }
     }
 

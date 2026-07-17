@@ -110,7 +110,12 @@
                         <ComboBox x:Name="Clock1TimeZoneCombo" 
                                   Height="32"
                                   Style="{StaticResource ModernComboBoxStyle}"
-                                  SelectionChanged="ClockSettingChanged"/>
+                                  IsEditable="True"
+                                  IsReadOnly="False"
+                                  TextSearch.TextPath="DisplayName"
+                                  SelectionChanged="ClockSettingChanged"
+                                  TextBoxBase.TextChanged="TimeZoneCombo_TextChanged"
+                                  GotFocus="TimeZoneCombo_GotFocus"/>
                     </StackPanel>
 
                     <Separator Background="{DynamicResource DashboardBorder}" Margin="0,8,0,16"/>
@@ -152,7 +157,12 @@
                         <ComboBox x:Name="Clock2TimeZoneCombo" 
                                   Height="32"
                                   Style="{StaticResource ModernComboBoxStyle}"
-                                  SelectionChanged="ClockSettingChanged"/>
+                                  IsEditable="True"
+                                  IsReadOnly="False"
+                                  TextSearch.TextPath="DisplayName"
+                                  SelectionChanged="ClockSettingChanged"
+                                  TextBoxBase.TextChanged="TimeZoneCombo_TextChanged"
+                                  GotFocus="TimeZoneCombo_GotFocus"/>
                     </StackPanel>
 
                     <Separator Background="{DynamicResource DashboardBorder}" Margin="0,8,0,16"/>
@@ -194,7 +204,12 @@
                         <ComboBox x:Name="Clock3TimeZoneCombo" 
                                   Height="32"
                                   Style="{StaticResource ModernComboBoxStyle}"
-                                  SelectionChanged="ClockSettingChanged"/>
+                                  IsEditable="True"
+                                  IsReadOnly="False"
+                                  TextSearch.TextPath="DisplayName"
+                                  SelectionChanged="ClockSettingChanged"
+                                  TextBoxBase.TextChanged="TimeZoneCombo_TextChanged"
+                                  GotFocus="TimeZoneCombo_GotFocus"/>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
