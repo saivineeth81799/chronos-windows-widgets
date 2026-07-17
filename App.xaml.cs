@@ -125,8 +125,12 @@ namespace WpfWidgets
                 _clockWindow.Show();
             }
  
-            // 6. Start background calendar sync
-            SyncService.Initialize(); // starts timer + first sync
+            // 6. Start background calendar sync (deferred to reduce startup impact)
+            System.Threading.Tasks.Task.Run(async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(5000);
+                await Dispatcher.InvokeAsync(() => SyncService?.Initialize());
+            });
  
             // 7. Show calendar widget if enabled
             if (WidgetConfig.Current.CalendarEnabled)

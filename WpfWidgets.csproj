@@ -13,6 +13,7 @@
     <Product>Chronos Widgets</Product>
     <Description>Chronos Windows Widgets Application</Description>
     <Company>Chronos</Company>
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>

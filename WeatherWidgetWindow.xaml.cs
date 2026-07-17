@@ -49,7 +49,12 @@ namespace WpfWidgets
             if (WidgetConfig.Current.WeatherEnabled)
             {
                 _refreshTimer.Start();
-                _ = InitializeWeatherAsync();
+                // Defer initial weather/geolocation fetch to reduce startup impact
+                System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(8000);
+                    await Dispatcher.InvokeAsync(async () => await InitializeWeatherAsync());
+                });
             }
         }
 

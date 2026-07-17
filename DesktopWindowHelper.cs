@@ -87,6 +87,7 @@ namespace WpfWidgets
         private static IntPtr _winEventHook = IntPtr.Zero;
         private static WinEventDelegate? _winEventProc; // prevent GC collection of delegate
         private static bool _isShowingDesktop = false;
+        private static IntPtr _activeWorkerW = IntPtr.Zero;
 
         /// <summary>
         /// Finds the active WorkerW window behind the desktop icons.
@@ -158,6 +159,12 @@ namespace WpfWidgets
 
                 // Wait 30ms before retrying
                 System.Threading.Thread.Sleep(30);
+            }
+
+            // Cache the active worker handle
+            if (workerW != IntPtr.Zero)
+            {
+                _activeWorkerW = workerW;
             }
 
             return workerW;
@@ -252,11 +259,40 @@ namespace WpfWidgets
         /// <summary>
         /// Callback fired whenever the foreground window changes.
         /// Detects Show Desktop by checking if WorkerW or Progman became foreground.
+        /// Also detects if WorkerW was recreated due to wallpaper slideshow changes.
         /// </summary>
         private static void OnForegroundChanged(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
         {
             try
             {
+                // Dynamic check: Did the desktop WorkerW change (slideshow wallpaper transition)?
+                IntPtr currentWorkerW = GetWorkerW();
+                if (currentWorkerW != IntPtr.Zero && currentWorkerW != _activeWorkerW)
+                {
+                    LogHelper.Log($"[DesktopWindowHelper] WorkerW handle changed from {_activeWorkerW.ToInt64():X} to {currentWorkerW.ToInt64():X}. Re-attaching widgets.");
+                    _activeWorkerW = currentWorkerW;
+                    
+                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        lock (_trackedWindows)
+                        {
+                            foreach (var window in _trackedWindows)
+                            {
+                                try
+                                {
+                                    var helper = new WindowInteropHelper(window);
+                                    helper.Owner = currentWorkerW;
+                                    PushToBottom(window);
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogHelper.Log($"[DesktopWindowHelper] Failed to re-own window on slideshow change: {ex.Message}");
+                                }
+                            }
+                        }
+                    }));
+                }
+
                 if (hwnd == IntPtr.Zero) return;
 
                 // Identify the class name of the new foreground window
