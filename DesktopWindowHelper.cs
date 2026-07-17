@@ -58,6 +58,10 @@ namespace WpfWidgets
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsWindow(IntPtr hWnd);
+
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
 
@@ -115,6 +119,11 @@ namespace WpfWidgets
         /// </summary>
         public static IntPtr GetWorkerW()
         {
+            if (_activeWorkerW != IntPtr.Zero && IsWindow(_activeWorkerW))
+            {
+                return _activeWorkerW;
+            }
+
             IntPtr progman = FindWindow("Progman", null);
             if (progman == IntPtr.Zero) return IntPtr.Zero;
 
