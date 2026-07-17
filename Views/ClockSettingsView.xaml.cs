@@ -170,11 +170,22 @@ namespace WpfWidgets.Views
         private void ScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             var scrollViewer = sender as ScrollViewer;
-            if (scrollViewer != null)
+            if (scrollViewer == null) return;
+
+            // Check if the scroll event source is a ComboBox or its dropdown popup
+            DependencyObject? obj = e.OriginalSource as DependencyObject;
+            while (obj != null && obj != scrollViewer)
             {
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.5));
-                e.Handled = true;
+                if (obj is System.Windows.Controls.ComboBox || obj.GetType().Name == "Popup")
+                {
+                    // Let the child handle the scroll natively
+                    return;
+                }
+                obj = System.Windows.Media.VisualTreeHelper.GetParent(obj);
             }
+
+            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.5));
+            e.Handled = true;
         }
     }
 
