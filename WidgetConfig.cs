@@ -11,7 +11,7 @@ namespace WpfWidgets
         public double ClockWidth { get; set; } = 340;
         public double ClockHeight { get; set; } = 145;
         public bool ClockLocked { get; set; } = false;
-        public string ClockTheme { get; set; } = "Light"; // Options: Light, Dark, System
+        public string ClockTheme { get; set; } = "Dark"; // Options: Light, Dark, System
         public bool Is24HourFormat { get; set; } = false;
         public bool ClockEnabled { get; set; } = true;
         public string Clock1Label { get; set; } = "Local Time";
@@ -53,7 +53,7 @@ namespace WpfWidgets
         public double WeatherPositionX { get; set; } = -1;
         public double WeatherPositionY { get; set; } = -1;
         public double WeatherWidth { get; set; } = 340;
-        public double WeatherHeight { get; set; } = 220;
+        public double WeatherHeight { get; set; } = 250;
         public bool WeatherLocked { get; set; } = false;
         public bool WeatherEnabled { get; set; } = true;
         public string WeatherLocationName { get; set; } = "Seattle, Washington";
@@ -62,7 +62,7 @@ namespace WpfWidgets
         public bool WeatherAutoDetect { get; set; } = true;
         public bool UseCelsius { get; set; } = false;
 
-        public double WidgetOpacity { get; set; } = 0.6;
+        public double WidgetOpacity { get; set; } = 0.15;
         public bool WidgetBlurEnabled { get; set; } = true;
 
         // Google Calendar Multi-Account local integrations

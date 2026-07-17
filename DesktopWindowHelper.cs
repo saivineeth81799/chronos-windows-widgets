@@ -32,6 +32,25 @@ namespace WpfWidgets
         [DllImport("user32.dll", SetLastError = true)]
         private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
+        [DllImport("user32.dll", EntryPoint = "GetWindowLong", SetLastError = true)]
+        private static extern IntPtr GetWindowLongPtr32(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr", SetLastError = true)]
+        private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+
+        private static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex)
+        {
+            if (IntPtr.Size == 8)
+                return GetWindowLongPtr64(hWnd, nIndex);
+            else
+                return GetWindowLongPtr32(hWnd, nIndex);
+        }
+
+        private static IntPtr GetWindowOwner(IntPtr hWnd)
+        {
+            return GetWindowLongPtr(hWnd, GWL_HWNDPARENT);
+        }
+
         [DllImport("user32.dll")]
         private static extern bool GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
@@ -63,6 +82,7 @@ namespace WpfWidgets
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TRANSPARENT = 0x00000020;
         private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int GWL_HWNDPARENT = -8;
 
         // SetWindowPos Constants
         private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
@@ -88,6 +108,7 @@ namespace WpfWidgets
         private static WinEventDelegate? _winEventProc; // prevent GC collection of delegate
         private static bool _isShowingDesktop = false;
         private static IntPtr _activeWorkerW = IntPtr.Zero;
+        private static System.Windows.Threading.DispatcherTimer? _restoreTimer;
 
         /// <summary>
         /// Finds the active WorkerW window behind the desktop icons.
@@ -218,6 +239,9 @@ namespace WpfWidgets
                 // 5. Start the global Show Desktop watcher (once)
                 StartShowDesktopWatcher();
 
+                // 6. Start the periodic restore timer (once)
+                StartRestoreTimer();
+
                 return true;
             }
             catch (Exception ex)
@@ -257,6 +281,112 @@ namespace WpfWidgets
         }
 
         /// <summary>
+        /// Starts the periodic timer to monitor and restore widget window state and ownership.
+        /// </summary>
+        private static void StartRestoreTimer()
+        {
+            if (_restoreTimer != null) return;
+
+            _restoreTimer = new System.Windows.Threading.DispatcherTimer();
+            _restoreTimer.Interval = TimeSpan.FromSeconds(2);
+            _restoreTimer.Tick += (s, e) =>
+            {
+                ReattachAndRestoreWidgets();
+            };
+            _restoreTimer.Start();
+            LogHelper.Log("[DesktopWindowHelper] Periodic widget restore timer started.");
+        }
+
+        /// <summary>
+        /// Scans all tracked widgets and ensures they are correctly owned by the active WorkerW,
+        /// and that they are restored if they have been minimized or hidden by the OS.
+        /// </summary>
+        public static void ReattachAndRestoreWidgets()
+        {
+            var app = System.Windows.Application.Current;
+            if (app == null) return;
+
+            if (!app.Dispatcher.CheckAccess())
+            {
+                app.Dispatcher.BeginInvoke(new Action(ReattachAndRestoreWidgets));
+                return;
+            }
+
+            try
+            {
+                IntPtr hParent = GetWorkerW();
+                if (hParent == IntPtr.Zero)
+                {
+                    hParent = FindWindow("Progman", null);
+                }
+
+                if (hParent == IntPtr.Zero) return;
+
+                // Track if WorkerW changed globally
+                bool parentChanged = hParent != _activeWorkerW;
+                if (parentChanged)
+                {
+                    LogHelper.Log($"[DesktopWindowHelper] ReattachAndRestoreWidgets: WorkerW handle changed from {_activeWorkerW.ToInt64():X} to {hParent.ToInt64():X}");
+                    _activeWorkerW = hParent;
+                }
+
+                lock (_trackedWindows)
+                {
+                    foreach (var window in _trackedWindows)
+                    {
+                        try
+                        {
+                            var helper = new WindowInteropHelper(window);
+                            IntPtr hWnd = helper.Handle;
+                            if (hWnd == IntPtr.Zero) continue;
+
+                            IntPtr currentOwner = GetWindowOwner(hWnd);
+                            bool needsReattach = currentOwner != hParent;
+
+                            // Check if window was hidden natively but is supposed to be visible in WPF
+                            bool isNativelyVisible = IsWindowVisible(hWnd);
+                            bool isWpfVisible = window.Visibility == Visibility.Visible;
+                            bool needsRestore = isWpfVisible && (!isNativelyVisible || window.WindowState == WindowState.Minimized);
+
+                            if (needsReattach || needsRestore)
+                            {
+                                if (needsReattach)
+                                {
+                                    LogHelper.Log($"[DesktopWindowHelper] Widget owner invalid (current: {currentOwner.ToInt64():X}, expected: {hParent.ToInt64():X}). Re-attaching.");
+                                    helper.Owner = hParent;
+                                }
+
+                                if (isWpfVisible)
+                                {
+                                    if (window.WindowState == WindowState.Minimized)
+                                    {
+                                        LogHelper.Log($"[DesktopWindowHelper] Restoring minimized widget: {window.GetType().Name}");
+                                        window.WindowState = WindowState.Normal;
+                                    }
+
+                                    // Force visibility state natively and position at bottom
+                                    LogHelper.Log($"[DesktopWindowHelper] Restoring visibility and pushing to bottom for: {window.GetType().Name}");
+                                    SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, 
+                                        SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+                                    
+                                    PushToBottom(window);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogHelper.Log($"[DesktopWindowHelper] Error restoring widget: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[DesktopWindowHelper] Error in ReattachAndRestoreWidgets: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Callback fired whenever the foreground window changes.
         /// Detects Show Desktop by checking if WorkerW or Progman became foreground.
         /// Also detects if WorkerW was recreated due to wallpaper slideshow changes.
@@ -269,28 +399,9 @@ namespace WpfWidgets
                 IntPtr currentWorkerW = GetWorkerW();
                 if (currentWorkerW != IntPtr.Zero && currentWorkerW != _activeWorkerW)
                 {
-                    LogHelper.Log($"[DesktopWindowHelper] WorkerW handle changed from {_activeWorkerW.ToInt64():X} to {currentWorkerW.ToInt64():X}. Re-attaching widgets.");
+                    LogHelper.Log($"[DesktopWindowHelper] WorkerW handle changed from {_activeWorkerW.ToInt64():X} to {currentWorkerW.ToInt64():X}. Triggering reattach and restore.");
                     _activeWorkerW = currentWorkerW;
-                    
-                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        lock (_trackedWindows)
-                        {
-                            foreach (var window in _trackedWindows)
-                            {
-                                try
-                                {
-                                    var helper = new WindowInteropHelper(window);
-                                    helper.Owner = currentWorkerW;
-                                    PushToBottom(window);
-                                }
-                                catch (Exception ex)
-                                {
-                                    LogHelper.Log($"[DesktopWindowHelper] Failed to re-own window on slideshow change: {ex.Message}");
-                                }
-                            }
-                        }
-                    }));
+                    ReattachAndRestoreWidgets();
                 }
 
                 if (hwnd == IntPtr.Zero) return;
@@ -390,6 +501,12 @@ namespace WpfWidgets
         /// </summary>
         public static void StopShowDesktopWatcher()
         {
+            if (_restoreTimer != null)
+            {
+                _restoreTimer.Stop();
+                _restoreTimer = null;
+                LogHelper.Log("[DesktopWindowHelper] Periodic widget restore timer stopped.");
+            }
             if (_winEventHook != IntPtr.Zero)
             {
                 UnhookWinEvent(_winEventHook);

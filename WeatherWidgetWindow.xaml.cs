@@ -426,7 +426,7 @@ namespace WpfWidgets
             try
             {
                 string tempUnit = WidgetConfig.Current.UseCelsius ? "celsius" : "fahrenheit";
-                string url = $"https://api.open-meteo.com/v1/forecast?latitude={WidgetConfig.Current.WeatherLatitude}&longitude={WidgetConfig.Current.WeatherLongitude}&current_weather=true&hourly=weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&temperature_unit={tempUnit}&forecast_days=4";
+                string url = $"https://api.open-meteo.com/v1/forecast?latitude={WidgetConfig.Current.WeatherLatitude}&longitude={WidgetConfig.Current.WeatherLongitude}&current_weather=true&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&temperature_unit={tempUnit}&forecast_days=4&past_days=1";
                 
                 string json = await _httpClient.GetStringAsync(url);
                 var response = JsonSerializer.Deserialize<WeatherResponse>(json);
@@ -471,40 +471,58 @@ namespace WpfWidgets
             string unitSymbol = WidgetConfig.Current.UseCelsius ? "°C" : "°F";
             CurrentTempText.Text = $"{Math.Round(data.current_weather.temperature)}{unitSymbol}";
 
-            if (data.daily != null && data.daily.temperature_2m_max.Count > 0)
+            if (data.daily != null && data.daily.time != null && data.daily.time.Count > 0)
             {
-                double todayMax = data.daily.temperature_2m_max[0];
-                double todayMin = data.daily.temperature_2m_min[0];
-                TempRangeLabel.Text = $"H: {Math.Round(todayMax)}°  L: {Math.Round(todayMin)}°";
+                // Find today's index dynamically (since past_days=1 shifts indices)
+                int todayIdx = 0;
+                if (!string.IsNullOrEmpty(data.current_weather?.time) && data.current_weather.time.Length >= 10)
+                {
+                    string todayStr = data.current_weather.time.Substring(0, 10);
+                    int idx = data.daily.time.IndexOf(todayStr);
+                    if (idx >= 0)
+                    {
+                        todayIdx = idx;
+                    }
+                }
 
-                // 3-Day Forecast rows — use noon hourly code for accurate daytime icon
-                if (data.daily.time.Count > 3)
+                if (todayIdx < data.daily.temperature_2m_max.Count)
+                {
+                    double todayMax = data.daily.temperature_2m_max[todayIdx];
+                    double todayMin = data.daily.temperature_2m_min[todayIdx];
+                    TempRangeLabel.Text = $"H: {Math.Round(todayMax)}°  L: {Math.Round(todayMin)}°";
+                }
+
+                // 3-Day Forecast rows starting from tomorrow (todayIdx + 1)
+                if (data.daily.time.Count > todayIdx + 3)
                 {
                     // Day 1 (Tomorrow)
-                    ForecastDay1Label.Text = GetDayOfWeekAbbrev(data.daily.time[1]);
-                    int d1Code = GetNoonHourlyCode(data, data.daily.time[1]);
+                    ForecastDay1Label.Text = GetDayOfWeekAbbrev(data.daily.time[todayIdx + 1]);
+                    int d1Code = GetNoonHourlyCode(data, data.daily.time[todayIdx + 1]);
                     var d1Details = GetWeatherCodeDetails(d1Code);
                     ForecastDay1Icon.Text = d1Details.icon;
                     ForecastDay1Icon.Foreground = d1Details.color;
-                    ForecastDay1Temp.Text = $"{Math.Round(data.daily.temperature_2m_max[1])}°/{Math.Round(data.daily.temperature_2m_min[1])}°";
+                    ForecastDay1Temp.Text = $"{Math.Round(data.daily.temperature_2m_max[todayIdx + 1])}°/{Math.Round(data.daily.temperature_2m_min[todayIdx + 1])}°";
 
                     // Day 2 (Overmorrow)
-                    ForecastDay2Label.Text = GetDayOfWeekAbbrev(data.daily.time[2]);
-                    int d2Code = GetNoonHourlyCode(data, data.daily.time[2]);
+                    ForecastDay2Label.Text = GetDayOfWeekAbbrev(data.daily.time[todayIdx + 2]);
+                    int d2Code = GetNoonHourlyCode(data, data.daily.time[todayIdx + 2]);
                     var d2Details = GetWeatherCodeDetails(d2Code);
                     ForecastDay2Icon.Text = d2Details.icon;
                     ForecastDay2Icon.Foreground = d2Details.color;
-                    ForecastDay2Temp.Text = $"{Math.Round(data.daily.temperature_2m_max[2])}°/{Math.Round(data.daily.temperature_2m_min[2])}°";
+                    ForecastDay2Temp.Text = $"{Math.Round(data.daily.temperature_2m_max[todayIdx + 2])}°/{Math.Round(data.daily.temperature_2m_min[todayIdx + 2])}°";
 
                     // Day 3 (Three days out)
-                    ForecastDay3Label.Text = GetDayOfWeekAbbrev(data.daily.time[3]);
-                    int d3Code = GetNoonHourlyCode(data, data.daily.time[3]);
+                    ForecastDay3Label.Text = GetDayOfWeekAbbrev(data.daily.time[todayIdx + 3]);
+                    int d3Code = GetNoonHourlyCode(data, data.daily.time[todayIdx + 3]);
                     var d3Details = GetWeatherCodeDetails(d3Code);
                     ForecastDay3Icon.Text = d3Details.icon;
                     ForecastDay3Icon.Foreground = d3Details.color;
-                    ForecastDay3Temp.Text = $"{Math.Round(data.daily.temperature_2m_max[3])}°/{Math.Round(data.daily.temperature_2m_min[3])}°";
+                    ForecastDay3Temp.Text = $"{Math.Round(data.daily.temperature_2m_max[todayIdx + 3])}°/{Math.Round(data.daily.temperature_2m_min[todayIdx + 3])}°";
                 }
             }
+
+            // Draw the trend graph
+            DrawWeatherGraph(data);
         }
 
         private string GetDayOfWeekAbbrev(string dateString)
@@ -714,6 +732,190 @@ namespace WpfWidgets
             return idx >= 0 ? data.hourly.weathercode[idx] : 0;
         }
 
+        private void WeatherGraphCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_lastResponse != null)
+            {
+                DrawWeatherGraph(_lastResponse);
+            }
+        }
+
+        private void DrawWeatherGraph(WeatherResponse data)
+        {
+            WeatherGraphCanvas.Children.Clear();
+
+            if (data.hourly?.temperature_2m == null || data.hourly.time == null || data.current_weather == null)
+                return;
+
+            // Find current time index in hourly forecast
+            int currentIndex = data.hourly.time.IndexOf(data.current_weather.time);
+            if (currentIndex < 0)
+            {
+                // Fallback: match by closest hour
+                if (data.current_weather.time != null && data.current_weather.time.Length >= 13)
+                {
+                    currentIndex = data.hourly.time.FindIndex(t => t.StartsWith(data.current_weather.time.Substring(0, 13)));
+                }
+            }
+
+            if (currentIndex < 0) return;
+
+            // Get points: past 4 hours, current, next 8 hours (total 13 points)
+            var graphTemps = new List<double>();
+            for (int i = -4; i <= 8; i++)
+            {
+                int targetIndex = currentIndex + i;
+                if (targetIndex >= 0 && targetIndex < data.hourly.temperature_2m.Count)
+                {
+                    graphTemps.Add(data.hourly.temperature_2m[targetIndex]);
+                }
+                else
+                {
+                    // Boundary clamp
+                    if (targetIndex < 0)
+                        graphTemps.Add(data.hourly.temperature_2m[0]);
+                    else
+                        graphTemps.Add(data.hourly.temperature_2m[data.hourly.temperature_2m.Count - 1]);
+                }
+            }
+
+            double canvasWidth = WeatherGraphCanvas.ActualWidth;
+            double canvasHeight = WeatherGraphCanvas.ActualHeight;
+
+            // Don't draw if the canvas hasn't loaded or has 0 size
+            if (canvasWidth <= 0 || canvasHeight <= 0)
+                return;
+
+            // Find min/max temperature in our 11-point window to scale the graph
+            double minTemp = double.MaxValue;
+            double maxTemp = double.MinValue;
+            foreach (double temp in graphTemps)
+            {
+                if (temp < minTemp) minTemp = temp;
+                if (temp > maxTemp) maxTemp = temp;
+            }
+
+            // Avoid division by zero if all temperatures are the same
+            if (Math.Abs(maxTemp - minTemp) < 0.001)
+            {
+                maxTemp += 1.0;
+                minTemp -= 1.0;
+            }
+
+            // Calculate coordinates
+            int pointCount = graphTemps.Count; // should be 11
+            var xPoints = new List<double>();
+            var yPoints = new List<double>();
+
+            double yMargin = 12; // safety margin so the graph doesn't clip top/bottom
+            for (int i = 0; i < pointCount; i++)
+            {
+                double x = i * (canvasWidth / (pointCount - 1));
+                
+                // Scale Y coordinate
+                double ratio = (graphTemps[i] - minTemp) / (maxTemp - minTemp);
+                double y = canvasHeight - yMargin - (ratio * (canvasHeight - 2 * yMargin));
+                
+                xPoints.Add(x);
+                yPoints.Add(y);
+            }
+
+            // Determine graph colors matching weather details
+            int curCode = data.current_weather.weathercode;
+            bool isDay = data.current_weather.is_day == 1;
+            var details = GetWeatherCodeDetails(curCode, isDay);
+            System.Windows.Media.Brush themeStrokeBrush = details.color;
+
+            // Create gradient fill brush
+            var themeColor = System.Windows.Media.Colors.Gray;
+            if (themeStrokeBrush is SolidColorBrush solidBrush)
+            {
+                themeColor = solidBrush.Color;
+            }
+
+            var graphFillBrush = new LinearGradientBrush
+            {
+                StartPoint = new System.Windows.Point(0, 0),
+                EndPoint = new System.Windows.Point(0, 1)
+            };
+            graphFillBrush.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(140, themeColor.R, themeColor.G, themeColor.B), 0.0)); // ~0.55 opacity
+            graphFillBrush.GradientStops.Add(new GradientStop(System.Windows.Media.Color.FromArgb(0, themeColor.R, themeColor.G, themeColor.B), 1.0));  // 0.0 opacity
+
+            // 1. Draw the filled area under the line
+            var fillFigure = new PathFigure
+            {
+                StartPoint = new System.Windows.Point(0, canvasHeight),
+                IsClosed = true
+            };
+            fillFigure.Segments.Add(new LineSegment(new System.Windows.Point(0, yPoints[0]), false));
+            for (int i = 1; i < pointCount; i++)
+            {
+                fillFigure.Segments.Add(new LineSegment(new System.Windows.Point(xPoints[i], yPoints[i]), true));
+            }
+            fillFigure.Segments.Add(new LineSegment(new System.Windows.Point(canvasWidth, canvasHeight), false));
+
+            var fillGeometry = new PathGeometry();
+            fillGeometry.Figures.Add(fillFigure);
+
+            var fillPath = new System.Windows.Shapes.Path
+            {
+                Fill = graphFillBrush,
+                Data = fillGeometry
+            };
+            WeatherGraphCanvas.Children.Add(fillPath);
+
+            // 2. Draw the trend line itself
+            var lineFigure = new PathFigure
+            {
+                StartPoint = new System.Windows.Point(0, yPoints[0]),
+                IsClosed = false
+            };
+            for (int i = 1; i < pointCount; i++)
+            {
+                lineFigure.Segments.Add(new LineSegment(new System.Windows.Point(xPoints[i], yPoints[i]), true));
+            }
+
+            var lineGeometry = new PathGeometry();
+            lineGeometry.Figures.Add(lineFigure);
+
+            var linePath = new System.Windows.Shapes.Path
+            {
+                Stroke = themeStrokeBrush,
+                StrokeThickness = 1.5,
+                Data = lineGeometry
+            };
+            WeatherGraphCanvas.Children.Add(linePath);
+
+            // 3. Draw "Current Time" vertical cursor line (at index 4)
+            if (pointCount > 4)
+            {
+                var cursorLine = new System.Windows.Shapes.Line
+                {
+                    X1 = xPoints[4],
+                    Y1 = 0,
+                    X2 = xPoints[4],
+                    Y2 = canvasHeight,
+                    Stroke = new SolidColorBrush(IsLightTheme() ? System.Windows.Media.Color.FromArgb(30, 0, 0, 0) : System.Windows.Media.Color.FromArgb(30, 255, 255, 255)),
+                    StrokeThickness = 1.0,
+                    StrokeDashArray = new DoubleCollection(new double[] { 4, 4 })
+                };
+                WeatherGraphCanvas.Children.Add(cursorLine);
+
+                // 4. Draw current temperature dot
+                var currentDot = new System.Windows.Shapes.Ellipse
+                {
+                    Width = 6.0,
+                    Height = 6.0,
+                    Fill = themeStrokeBrush,
+                    Stroke = new SolidColorBrush(IsLightTheme() ? System.Windows.Media.Colors.White : System.Windows.Media.Colors.Black),
+                    StrokeThickness = 1.0
+                };
+                System.Windows.Controls.Canvas.SetLeft(currentDot, xPoints[4] - 3.0);
+                System.Windows.Controls.Canvas.SetTop(currentDot, yPoints[4] - 3.0);
+                WeatherGraphCanvas.Children.Add(currentDot);
+            }
+        }
+
         // Open-Meteo response mapping classes
         private class WeatherResponse
         {
@@ -727,6 +929,7 @@ namespace WpfWidgets
             public double temperature { get; set; }
             public int weathercode { get; set; }
             public int is_day { get; set; }
+            public string time { get; set; }
         }
 
         private class DailyWeather
@@ -741,6 +944,7 @@ namespace WpfWidgets
         {
             public List<string> time { get; set; }
             public List<int> weathercode { get; set; }
+            public List<double> temperature_2m { get; set; }
         }
     }
 }

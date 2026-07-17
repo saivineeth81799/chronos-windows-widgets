@@ -10,7 +10,7 @@
     <SolidColorBrush x:Key="GlassBorderBrush" Color="#15FFFFFF"/>
     
     <!-- Font family -->
-    <FontFamily x:Key="WidgetFont">Segoe UI</FontFamily>
+    <FontFamily x:Key="WidgetFont">Segoe UI Semibold</FontFamily>
     
     <!-- Outer Card Border Glow/Shadow (Disabled) -->
     <DropShadowEffect x:Key="WidgetShadow" 

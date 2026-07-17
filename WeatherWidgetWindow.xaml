@@ -100,6 +100,16 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     
+                    <!-- Graph Canvas behind the text -->
+                    <Canvas x:Name="WeatherGraphCanvas" 
+                            Grid.Column="0" 
+                            Grid.ColumnSpan="2" 
+                            HorizontalAlignment="Stretch" 
+                            VerticalAlignment="Stretch"
+                            Opacity="0.20"
+                            IsHitTestVisible="False"
+                            SizeChanged="WeatherGraphCanvas_SizeChanged"/>
+                    
                     <!-- Temp and Icon -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock x:Name="CurrentConditionIcon"
@@ -114,7 +124,7 @@
                         <TextBlock x:Name="CurrentTempText"
                                    Text="72°"
                                    FontSize="36"
-                                   FontWeight="Light"
+                                   FontWeight="SemiBold"
                                    FontFamily="{DynamicResource WidgetFont}"
                                    Foreground="{DynamicResource WidgetText}"
                                    VerticalAlignment="Center"/>
