@@ -6,7 +6,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="420" d:DesignWidth="580">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MouseWheel="ScrollViewer_MouseWheel">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
         <StackPanel>
             <!-- Title Header -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">

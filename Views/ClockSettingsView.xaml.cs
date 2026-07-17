@@ -167,14 +167,22 @@ namespace WpfWidgets.Views
             _isInitialized = true;
         }
 
-        private void ScrollViewer_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        private void ScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             var scrollViewer = sender as ScrollViewer;
-            if (scrollViewer != null)
+            if (scrollViewer == null) return;
+
+            // If any timezone ComboBox dropdown list is open, bypass the override to allow normal scroll inside the dropdown
+            if ((Clock1TimeZoneCombo != null && Clock1TimeZoneCombo.IsDropDownOpen) ||
+                (Clock2TimeZoneCombo != null && Clock2TimeZoneCombo.IsDropDownOpen) ||
+                (Clock3TimeZoneCombo != null && Clock3TimeZoneCombo.IsDropDownOpen))
             {
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.08));
-                e.Handled = true;
+                return;
             }
+
+            // Scroll with custom dampened speed and mark handled to suppress native ScrollViewer speed
+            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.08));
+            e.Handled = true;
         }
     }
 

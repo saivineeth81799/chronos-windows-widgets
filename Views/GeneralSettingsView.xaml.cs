@@ -154,14 +154,19 @@ namespace WpfWidgets.Views
             app?.ApplyWidgetBlur();
         }
 
-        private void ScrollViewer_MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        private void ScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             var scrollViewer = sender as ScrollViewer;
-            if (scrollViewer != null)
+            if (scrollViewer == null) return;
+
+            // If the theme selector dropdown is open, let it handle the scroll natively
+            if (ThemeSelector != null && ThemeSelector.IsDropDownOpen)
             {
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.08));
-                e.Handled = true;
+                return;
             }
+
+            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.08));
+            e.Handled = true;
         }
     }
 }
