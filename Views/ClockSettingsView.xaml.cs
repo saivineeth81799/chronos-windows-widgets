@@ -166,6 +166,16 @@ namespace WpfWidgets.Views
             LoadConfiguration();
             _isInitialized = true;
         }
+
+        private void ScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            var scrollViewer = sender as ScrollViewer;
+            if (scrollViewer != null)
+            {
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - (e.Delta * 0.5));
+                e.Handled = true;
+            }
+        }
     }
 
     public class TimeZoneItem
