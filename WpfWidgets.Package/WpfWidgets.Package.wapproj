@@ -68,7 +68,11 @@
     <None Include="WpfWidgets.Package_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\WpfWidgets.csproj" />
+    <ProjectReference Include="..\WpfWidgets.csproj">
+      <SkipGetTargetFrameworkProperties>True</SkipGetTargetFrameworkProperties>
+      <PublishProfile>Properties\PublishProfiles\win-x64.pubxml</PublishProfile>
+      <EntryPointProjectUniqueName>..\WpfWidgets.csproj</EntryPointProjectUniqueName>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
 </Project>

@@ -66,8 +66,10 @@ jobs:
           $layoutDir = "./msix-layout"
           New-Item -ItemType Directory -Path $layoutDir -Force | Out-Null
 
-          # Copy published app files
-          Copy-Item -Path "./publish/*" -Destination $layoutDir -Recurse -Force
+          # Copy published app files into WpfWidgets subfolder to match MSIX standard layout
+          $appSubdir = Join-Path $layoutDir "WpfWidgets"
+          New-Item -ItemType Directory -Path $appSubdir -Force | Out-Null
+          Copy-Item -Path "./publish/*" -Destination $appSubdir -Recurse -Force
 
           # Copy the AppxManifest
           Copy-Item -Path "${{ env.PACKAGE_PROJECT_PATH }}/Package.appxmanifest" -Destination "$layoutDir/AppxManifest.xml" -Force

@@ -9,7 +9,7 @@
   <Identity
     Name="chronosbycalmmind.chronoswidgets"
     Publisher="CN=F8F34C54-A334-46A8-A211-7375279AD048"
-    Version="1.0.20.0" />
+    Version="1.0.28.0" />
 
   <Properties>
     <DisplayName>Chronos Widgets</DisplayName>
@@ -27,7 +27,7 @@
 
   <Applications>
     <Application Id="App"
-      Executable="WpfWidgets.exe"
+      Executable="WpfWidgets\WpfWidgets.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="Chronos Widgets"
@@ -39,7 +39,7 @@
         <uap:SplashScreen Image="Images\SplashScreen.png" />
       </uap:VisualElements>
       <Extensions>
-        <desktop:Extension Category="windows.startupTask" Executable="WpfWidgets.exe" EntryPoint="Windows.FullTrustApplication">
+        <desktop:Extension Category="windows.startupTask" Executable="WpfWidgets\WpfWidgets.exe" EntryPoint="Windows.FullTrustApplication">
           <desktop:StartupTask TaskId="ChronosWidgetsStartup" Enabled="false" DisplayName="Chronos Widgets" />
         </desktop:Extension>
       </Extensions>
