@@ -9,7 +9,7 @@
     <Grid>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" 
                       VerticalScrollBarVisibility="Auto"
-                      PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+                      MouseWheel="ScrollViewer_MouseWheel">
             <StackPanel Margin="0,0,12,0">
             <!-- Title Header -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
