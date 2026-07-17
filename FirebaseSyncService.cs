@@ -396,18 +396,8 @@ namespace WpfWidgets
                 // Respond with a tidy success/error page
                 bool codeReceived = !string.IsNullOrEmpty(authCode) && returnedState == state;
                 string htmlPage = codeReceived
-                    ? @"<html><head><title>Sign-in Successful</title>
-                        <style>body{font-family:'Segoe UI',sans-serif;background:#121215;color:white;text-align:center;padding-top:100px;}
-                        .card{background:#1c1c1f;padding:40px;border-radius:16px;display:inline-block;box-shadow:0 8px 30px rgba(0,0,0,.5);}
-                        h2{color:#0078d4;}</style></head>
-                        <body><div class='card'><h2>&#10003; Sign-in Successful!</h2>
-                        <p>You can close this tab and return to the Widgets app.</p></div></body></html>"
-                    : @"<html><head><title>Sign-in Failed</title>
-                        <style>body{font-family:'Segoe UI',sans-serif;background:#121215;color:white;text-align:center;padding-top:100px;}
-                        .card{background:#1c1c1f;padding:40px;border-radius:16px;display:inline-block;}
-                        h2{color:#e53935;}</style></head>
-                        <body><div class='card'><h2>Authentication Failed</h2>
-                        <p>Invalid or missing authorization code. Please try again.</p></div></body></html>";
+                    ? GetOAuthCallbackHtml(true, "Sign-in Successful", "Sign-in Successful", "You can close this tab and return to the Widgets app.")
+                    : GetOAuthCallbackHtml(false, "Sign-in Failed", "Authentication Failed", "Invalid or missing authorization code. Please try again.");
 
                 byte[] htmlBytes = System.Text.Encoding.UTF8.GetBytes(htmlPage);
                 response.ContentType = "text/html";
@@ -452,6 +442,291 @@ namespace WpfWidgets
             {
                 try { listener.Stop(); } catch { }
             }
+        }
+
+        private string GetOAuthCallbackHtml(bool success, string title, string header, string description)
+        {
+            string accent = success ? "#6366f1" : "#ef4444";
+            string accentHover = success ? "#4f46e5" : "#dc2626";
+            string accentShadow = success ? "rgba(99, 102, 241, 0.3)" : "rgba(239, 68, 68, 0.2)";
+            string statusColor = success ? "#10b981" : "#ef4444";
+            string statusBg = success ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)";
+            string bgGlow = success
+                ? "radial-gradient(circle at 50% 35%, rgba(99, 102, 241, 0.15) 0%, rgba(9, 9, 11, 0) 60%), #09090b"
+                : "radial-gradient(circle at 50% 35%, rgba(239, 68, 68, 0.12) 0%, rgba(9, 9, 11, 0) 60%), #09090b";
+
+            string statusIconMarkup = success
+                ? @"<svg class=""status-svg"" viewBox=""0 0 52 52"">
+                        <circle class=""status-circle"" cx=""26"" cy=""26"" r=""25"" fill=""none""/>
+                        <path class=""status-path"" fill=""none"" d=""M14.1 27.2l7.1 7.2 16.7-16.8""/>
+                    </svg>"
+                : @"<svg class=""status-svg"" viewBox=""0 0 52 52"">
+                        <circle class=""status-circle"" cx=""26"" cy=""26"" r=""25"" fill=""none""/>
+                        <path class=""status-path"" fill=""none"" d=""M16 16l20 20""/>
+                        <path class=""status-path-2"" fill=""none"" d=""M36 16L16 36""/>
+                    </svg>";
+
+            string pulseMarkup = success
+                ? @"<div class=""connector-pulse""></div>"
+                : "";
+
+            string clockStrokeColor = success ? "#818cf8" : "#ef4444";
+
+            return $@"<!DOCTYPE html>
+<html lang=""en"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>{title}</title>
+    <link href=""https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"" rel=""stylesheet"">
+    <style>
+        :root {{
+            --bg-glow: {bgGlow};
+            --accent: {accent};
+            --accent-hover: {accentHover};
+            --accent-shadow: {accentShadow};
+            --status-color: {statusColor};
+            --status-bg: {statusBg};
+        }}
+        
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }}
+        
+        body {{
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, sans-serif;
+            background: var(--bg-glow);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }}
+
+        .card {{
+            background: rgba(18, 18, 24, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px 32px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }}
+
+        @keyframes fadeIn {{
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        .logo-container {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 36px;
+        }}
+
+        .logo-icon {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.9);
+        }}
+
+        .connector {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.08);
+            position: relative;
+            border-radius: 1px;
+            overflow: hidden;
+        }}
+
+        .connector-pulse {{
+            position: absolute;
+            height: 100%;
+            width: 12px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            left: -12px;
+            animation: pulseSlide 2s infinite ease-in-out;
+        }}
+
+        @keyframes pulseSlide {{
+            0% {{ left: -12px; }}
+            100% {{ left: 40px; }}
+        }}
+
+        .status-icon-wrapper {{
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+
+        .status-svg {{
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 3.5;
+            stroke: var(--status-color);
+            stroke-miterlimit: 10;
+            box-shadow: inset 0 0 0 var(--status-color);
+            animation: fillCircle 0.4s ease-in-out 0.4s forwards, scaleUp 0.3s ease-in-out 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }}
+
+        .status-circle {{
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 3.5;
+            stroke-miterlimit: 10;
+            stroke: var(--status-color);
+            fill: none;
+            animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }}
+
+        .status-path {{
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: strokePath 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+        }}
+
+        .status-path-2 {{
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: strokePath 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards;
+        }}
+
+        @keyframes strokeCircle {{
+            100% {{ stroke-dashoffset: 0; }}
+        }}
+
+        @keyframes strokePath {{
+            100% {{ stroke-dashoffset: 0; }}
+        }}
+
+        @keyframes fillCircle {{
+            100% {{ box-shadow: inset 0 0 0 40px var(--status-bg); }}
+        }}
+
+        @keyframes scaleUp {{
+            0%, 100% {{ transform: none; }}
+            50% {{ transform: scale3d(1.08, 1.08, 1); }}
+        }}
+
+        h2 {{
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }}
+
+        p {{
+            font-size: 15px;
+            color: #a1a1aa;
+            line-height: 1.6;
+            margin-bottom: 36px;
+            font-weight: 400;
+        }}
+
+        .btn {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+            border: none;
+            color: #ffffff;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 500;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 14px var(--accent-shadow);
+            font-family: inherit;
+            width: 100%;
+            text-decoration: none;
+            outline: none;
+        }}
+
+        .btn:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-shadow), 0 0 0 2px rgba(255, 255, 255, 0.15);
+        }}
+
+        .btn:active {{
+            transform: translateY(1px);
+        }}
+
+        .note {{
+            font-size: 12px;
+            color: #71717a;
+            display: block;
+            margin-top: 18px;
+            line-height: 1.4;
+            font-weight: 400;
+        }}
+    </style>
+</head>
+<body>
+    <div class=""card"">
+        <div class=""logo-container"">
+            <div class=""logo-icon"" title=""Chronos Widgets"">
+                <svg width=""22"" height=""22"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round"">
+                    <circle cx=""12"" cy=""12"" r=""10"" stroke=""rgba(255,255,255,0.7)"" />
+                    <polyline points=""12 6 12 12 16 14"" stroke=""{clockStrokeColor}"" stroke-width=""2.5"" />
+                </svg>
+            </div>
+            <div class=""connector"">
+                {pulseMarkup}
+            </div>
+            <div class=""logo-icon"" title=""Google"">
+                <svg width=""18"" height=""18"" viewBox=""0 0 24 24"">
+                    <path fill=""#4285F4"" d=""M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z""/>
+                    <path fill=""#34A853"" d=""M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z""/>
+                    <path fill=""#FBBC05"" d=""M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z""/>
+                    <path fill=""#EA4335"" d=""M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z""/>
+                </svg>
+            </div>
+        </div>
+        
+        <div class=""status-icon-wrapper"">
+            {statusIconMarkup}
+        </div>
+
+        <h2>{header}</h2>
+        <p>{description}</p>
+        
+        <button class=""btn"" onclick=""window.close()"">Close Tab</button>
+        <span class=""note"">If this tab doesn't close automatically, you can safely close it manually.</span>
+    </div>
+</body>
+</html>";
         }
 
         /// <summary>
@@ -1302,18 +1577,8 @@ namespace WpfWidgets
 
                 bool codeReceived = !string.IsNullOrEmpty(authCode) && returnedState == state;
                 string htmlPage = codeReceived
-                    ? @"<html><head><title>Connection Successful</title>
-                        <style>body{font-family:'Segoe UI',sans-serif;background:#121215;color:white;text-align:center;padding-top:100px;}
-                        .card{background:#1c1c1f;padding:40px;border-radius:16px;display:inline-block;box-shadow:0 8px 30px rgba(0,0,0,.5);}
-                        h2{color:#0078d4;}</style></head>
-                        <body><div class='card'><h2>&#10003; Account Connected!</h2>
-                        <p>Google Calendar has been successfully linked. You can close this tab now.</p></div></body></html>"
-                    : @"<html><head><title>Connection Failed</title>
-                        <style>body{font-family:'Segoe UI',sans-serif;background:#121215;color:white;text-align:center;padding-top:100px;}
-                        .card{background:#1c1c1f;padding:40px;border-radius:16px;display:inline-block;}
-                        h2{color:#e53935;}</style></head>
-                        <body><div class='card'><h2>Connection Failed</h2>
-                        <p>Invalid code or authorization rejected. Please try again.</p></div></body></html>";
+                    ? GetOAuthCallbackHtml(true, "Connection Successful", "Account Connected!", "Google Calendar has been successfully linked. You can close this tab now.")
+                    : GetOAuthCallbackHtml(false, "Connection Failed", "Connection Failed", "Invalid code or authorization rejected. Please try again.");
 
                 byte[] htmlBytes = System.Text.Encoding.UTF8.GetBytes(htmlPage);
                 response.ContentType = "text/html";
