@@ -206,6 +206,12 @@ namespace WpfWidgets.Views
             var textBox = e.OriginalSource as System.Windows.Controls.TextBox;
             if (textBox == null) return;
 
+            // Only filter if the user is actively typing (TextBox has keyboard focus)
+            if (!textBox.IsKeyboardFocused)
+            {
+                return;
+            }
+
             string query = textBox.Text;
 
             // Get the view associated with this ComboBox's ItemsSource
@@ -232,7 +238,7 @@ namespace WpfWidgets.Views
             _isInitialized = true;
 
             // Keep the dropdown open to show filter results as typing occurs
-            if (comboBox.IsFocused && !comboBox.IsDropDownOpen)
+            if (!comboBox.IsDropDownOpen)
             {
                 comboBox.IsDropDownOpen = true;
             }
@@ -250,6 +256,18 @@ namespace WpfWidgets.Views
             }
 
             comboBox.IsDropDownOpen = true;
+        }
+
+        private void TimeZoneCombo_DropDownOpened(object sender, EventArgs e)
+        {
+            var comboBox = sender as System.Windows.Controls.ComboBox;
+            if (comboBox == null) return;
+
+            var view = comboBox.ItemsSource as System.Windows.Data.ListCollectionView;
+            if (view != null)
+            {
+                view.Filter = null;
+            }
         }
     }
 
