@@ -432,15 +432,10 @@ namespace WpfWidgets
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             DesktopWindowHelper.SetRoundedWindowRegion(this, 8);
-            if (this.IsLoaded)
-            {
-                WidgetConfig.Current.ClockWidth = e.NewSize.Width;
-                WidgetConfig.Current.ClockHeight = e.NewSize.Height;
-                WidgetConfig.Save();
-            }
         }
 
         private const int WM_NCHITTEST = 0x0084;
+        private const int WM_EXITSIZEMOVE = 0x0232;
         private const int HTLEFT = 10;
         private const int HTRIGHT = 11;
         private const int HTTOP = 12;
@@ -459,7 +454,16 @@ namespace WpfWidgets
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (msg == WM_NCHITTEST)
+            if (msg == WM_EXITSIZEMOVE)
+            {
+                WidgetConfig.Current.ClockWidth = this.ActualWidth;
+                WidgetConfig.Current.ClockHeight = this.ActualHeight;
+                WidgetConfig.Current.ClockPositionX = this.Left;
+                WidgetConfig.Current.ClockPositionY = this.Top;
+                WidgetConfig.Save();
+                LogHelper.Log($"[Size/Move] Saved Clock Widget layout: size={ActualWidth}x{ActualHeight}, pos={Left},{Top}");
+            }
+            else if (msg == WM_NCHITTEST)
             {
                 if (WidgetConfig.Current.ClockLocked) return IntPtr.Zero;
 

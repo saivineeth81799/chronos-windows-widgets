@@ -258,15 +258,10 @@ namespace WpfWidgets
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             DesktopWindowHelper.SetRoundedWindowRegion(this, 8);
-            if (this.IsLoaded)
-            {
-                WidgetConfig.Current.TasksWidth = e.NewSize.Width;
-                WidgetConfig.Current.TasksHeight = e.NewSize.Height;
-                WidgetConfig.Save();
-            }
         }
 
         private const int WM_NCHITTEST = 0x0084;
+        private const int WM_EXITSIZEMOVE = 0x0232;
         private const int HTLEFT = 10;
         private const int HTRIGHT = 11;
         private const int HTTOP = 12;
@@ -285,7 +280,16 @@ namespace WpfWidgets
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (msg == WM_NCHITTEST)
+            if (msg == WM_EXITSIZEMOVE)
+            {
+                WidgetConfig.Current.TasksWidth = this.ActualWidth;
+                WidgetConfig.Current.TasksHeight = this.ActualHeight;
+                WidgetConfig.Current.TasksPositionX = this.Left;
+                WidgetConfig.Current.TasksPositionY = this.Top;
+                WidgetConfig.Save();
+                LogHelper.Log($"[Size/Move] Saved Tasks Widget layout: size={ActualWidth}x{ActualHeight}, pos={Left},{Top}");
+            }
+            else if (msg == WM_NCHITTEST)
             {
                 if (WidgetConfig.Current.TasksLocked) return IntPtr.Zero;
 

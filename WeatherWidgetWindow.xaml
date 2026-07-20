@@ -45,7 +45,7 @@
                     
                     <TextBlock x:Name="LocationText"
                                Grid.Column="0"
-                               Text="Seattle"
+                               Text="Loading..."
                                FontSize="13.5"
                                FontWeight="SemiBold"
                                FontFamily="{DynamicResource WidgetFont}"
@@ -53,133 +53,133 @@
                                TextTrimming="CharacterEllipsis"
                                VerticalAlignment="Center"/>
 
-                    <!-- Refresh Button -->
-                    <Button Grid.Column="1"
-                            x:Name="RefreshButton"
-                            Content="&#xE5D5;"
-                            FontFamily="{StaticResource MaterialSymbolsOutlined}"
-                            FontSize="14"
-                            Foreground="{DynamicResource WidgetText}"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Padding="4"
-                            Cursor="Hand"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Right"
-                            Opacity="0.7"
-                            RenderTransformOrigin="0.5,0.5"
-                            Click="RefreshButton_Click">
-                        <Button.RenderTransform>
-                            <RotateTransform x:Name="RefreshButtonRotation" Angle="0"/>
-                        </Button.RenderTransform>
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Opacity" Value="1.0"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                </Grid>
+                     <!-- Refresh Button -->
+                     <Button Grid.Column="1"
+                             x:Name="RefreshButton"
+                             Content="&#xE5D5;"
+                             FontFamily="{StaticResource MaterialSymbolsOutlined}"
+                             FontSize="14"
+                             Foreground="{DynamicResource WidgetText}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="4"
+                             Cursor="Hand"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Right"
+                             Opacity="0.7"
+                             RenderTransformOrigin="0.5,0.5"
+                             Click="RefreshButton_Click">
+                         <Button.RenderTransform>
+                             <RotateTransform x:Name="RefreshButtonRotation" Angle="0"/>
+                         </Button.RenderTransform>
+                         <Button.Style>
+                             <Style TargetType="Button">
+                                 <Setter Property="Template">
+                                     <Setter.Value>
+                                         <ControlTemplate TargetType="Button">
+                                             <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                             </Border>
+                                         </ControlTemplate>
+                                     </Setter.Value>
+                                 </Setter>
+                                 <Style.Triggers>
+                                     <Trigger Property="IsMouseOver" Value="True">
+                                         <Setter Property="Opacity" Value="1.0"/>
+                                     </Trigger>
+                                 </Style.Triggers>
+                             </Style>
+                         </Button.Style>
+                     </Button>
+                 </Grid>
 
-                <!-- 2. Current Weather Info Grid -->
-                <Grid Grid.Row="1" Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <!-- Graph Canvas behind the text -->
-                    <Canvas x:Name="WeatherGraphCanvas" 
-                            Grid.Column="0" 
-                            Grid.ColumnSpan="2" 
-                            HorizontalAlignment="Stretch" 
-                            VerticalAlignment="Stretch"
-                            Opacity="0.20"
-                            IsHitTestVisible="False"
-                            SizeChanged="WeatherGraphCanvas_SizeChanged"/>
-                    
-                    <!-- Temp and Icon -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock x:Name="CurrentConditionIcon"
-                                   Text="&#xE81A;" 
-                                   FontFamily="{StaticResource MaterialSymbolsOutlined}"
-                                   Typography.StandardLigatures="True"
-                                   Typography.ContextualLigatures="True"
-                                   FontSize="38"
-                                   Foreground="#FFFBBC05"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,10,0"/>
-                        <TextBlock x:Name="CurrentTempText"
-                                   Text="72°"
-                                   FontSize="36"
-                                   FontWeight="SemiBold"
-                                   FontFamily="{DynamicResource WidgetFont}"
-                                   Foreground="{DynamicResource WidgetText}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
+                 <!-- 2. Current Weather Info Grid -->
+                 <Grid Grid.Row="1" Margin="0,0,0,6">
+                     <Grid.ColumnDefinitions>
+                         <ColumnDefinition Width="Auto"/>
+                         <ColumnDefinition Width="*"/>
+                     </Grid.ColumnDefinitions>
+                     
+                     <!-- Graph Canvas behind the text -->
+                     <Canvas x:Name="WeatherGraphCanvas" 
+                             Grid.Column="0" 
+                             Grid.ColumnSpan="2" 
+                             HorizontalAlignment="Stretch" 
+                             VerticalAlignment="Stretch"
+                             Opacity="0.20"
+                             IsHitTestVisible="False"
+                             SizeChanged="WeatherGraphCanvas_SizeChanged"/>
+                     
+                     <!-- Temp and Icon -->
+                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                         <TextBlock x:Name="CurrentConditionIcon"
+                                    Text="&#xE2BD;" 
+                                    FontFamily="{StaticResource MaterialSymbolsOutlined}"
+                                    Typography.StandardLigatures="True"
+                                    Typography.ContextualLigatures="True"
+                                    FontSize="38"
+                                    Foreground="#FFFBBC05"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,10,0"/>
+                         <TextBlock x:Name="CurrentTempText"
+                                    Text="--°"
+                                    FontSize="36"
+                                    FontWeight="SemiBold"
+                                    FontFamily="{DynamicResource WidgetFont}"
+                                    Foreground="{DynamicResource WidgetText}"
+                                    VerticalAlignment="Center"/>
+                     </StackPanel>
 
-                    <!-- Condition details -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,0,0">
-                        <TextBlock x:Name="ConditionLabel"
-                                   Text="Sunny"
-                                   FontSize="13.5"
-                                   FontWeight="SemiBold"
-                                   FontFamily="{DynamicResource WidgetFont}"
-                                   Foreground="{DynamicResource WidgetText}"
-                                   TextTrimming="CharacterEllipsis"/>
-                        <TextBlock x:Name="TempRangeLabel"
-                                   Text="H: 78°  L: 60°"
-                                   FontSize="10.5"
-                                   FontFamily="{DynamicResource WidgetFont}"
-                                   Foreground="{DynamicResource WidgetSubText}"
-                                   Margin="0,2,0,0"/>
-                    </StackPanel>
-                </Grid>
+                     <!-- Condition details -->
+                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,0,0">
+                         <TextBlock x:Name="ConditionLabel"
+                                    Text="Loading..."
+                                    FontSize="13.5"
+                                    FontWeight="SemiBold"
+                                    FontFamily="{DynamicResource WidgetFont}"
+                                    Foreground="{DynamicResource WidgetText}"
+                                    TextTrimming="CharacterEllipsis"/>
+                         <TextBlock x:Name="TempRangeLabel"
+                                    Text="H: --°  L: --°"
+                                    FontSize="10.5"
+                                    FontFamily="{DynamicResource WidgetFont}"
+                                    Foreground="{DynamicResource WidgetSubText}"
+                                    Margin="0,2,0,0"/>
+                     </StackPanel>
+                 </Grid>
 
-                <!-- 3. Separator -->
-                <Separator Grid.Row="2" Background="{DynamicResource WidgetBorder}" Margin="0,0,0,10"/>
+                 <!-- 3. Separator -->
+                 <Separator Grid.Row="2" Background="{DynamicResource WidgetBorder}" Margin="0,0,0,10"/>
 
-                <!-- 4. 3-Day Forecast Horizontal Row -->
-                <Grid Grid.Row="3" Margin="0,0,0,4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <!-- Day 1 -->
-                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                        <TextBlock x:Name="ForecastDay1Label" Text="Mon" FontSize="11" Foreground="{DynamicResource WidgetSubText}" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="ForecastDay1Icon" Text="&#xE81A;" FontFamily="{StaticResource MaterialSymbolsOutlined}" Typography.StandardLigatures="True" Typography.ContextualLigatures="True" FontSize="18" Foreground="{DynamicResource WidgetText}" Margin="0,4" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="ForecastDay1Temp" Text="74°/58°" FontSize="10" Foreground="{DynamicResource WidgetText}" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                    
-                    <!-- Day 2 -->
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                        <TextBlock x:Name="ForecastDay2Label" Text="Tue" FontSize="11" Foreground="{DynamicResource WidgetSubText}" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="ForecastDay2Icon" Text="&#xE81A;" FontFamily="{StaticResource MaterialSymbolsOutlined}" Typography.StandardLigatures="True" Typography.ContextualLigatures="True" FontSize="18" Foreground="{DynamicResource WidgetText}" Margin="0,4" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="ForecastDay2Temp" Text="75°/59°" FontSize="10" Foreground="{DynamicResource WidgetText}" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                    
-                    <!-- Day 3 -->
-                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                        <TextBlock x:Name="ForecastDay3Label" Text="Wed" FontSize="11" Foreground="{DynamicResource WidgetSubText}" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="ForecastDay3Icon" Text="&#xE81A;" FontFamily="{StaticResource MaterialSymbolsOutlined}" Typography.StandardLigatures="True" Typography.ContextualLigatures="True" FontSize="18" Foreground="{DynamicResource WidgetText}" Margin="0,4" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="ForecastDay3Temp" Text="73°/57°" FontSize="10" Foreground="{DynamicResource WidgetText}" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
+                 <!-- 4. 3-Day Forecast Horizontal Row -->
+                 <Grid Grid.Row="3" Margin="0,0,0,4">
+                     <Grid.ColumnDefinitions>
+                         <ColumnDefinition Width="*"/>
+                         <ColumnDefinition Width="*"/>
+                         <ColumnDefinition Width="*"/>
+                     </Grid.ColumnDefinitions>
+                     
+                     <!-- Day 1 -->
+                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                         <TextBlock x:Name="ForecastDay1Label" Text="--" FontSize="11" Foreground="{DynamicResource WidgetSubText}" HorizontalAlignment="Center"/>
+                         <TextBlock x:Name="ForecastDay1Icon" Text="&#xE2BD;" FontFamily="{StaticResource MaterialSymbolsOutlined}" Typography.StandardLigatures="True" Typography.ContextualLigatures="True" FontSize="18" Foreground="{DynamicResource WidgetText}" Margin="0,4" HorizontalAlignment="Center"/>
+                         <TextBlock x:Name="ForecastDay1Temp" Text="--/--" FontSize="10" Foreground="{DynamicResource WidgetText}" HorizontalAlignment="Center"/>
+                     </StackPanel>
+                     
+                     <!-- Day 2 -->
+                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                         <TextBlock x:Name="ForecastDay2Label" Text="--" FontSize="11" Foreground="{DynamicResource WidgetSubText}" HorizontalAlignment="Center"/>
+                         <TextBlock x:Name="ForecastDay2Icon" Text="&#xE2BD;" FontFamily="{StaticResource MaterialSymbolsOutlined}" Typography.StandardLigatures="True" Typography.ContextualLigatures="True" FontSize="18" Foreground="{DynamicResource WidgetText}" Margin="0,4" HorizontalAlignment="Center"/>
+                         <TextBlock x:Name="ForecastDay2Temp" Text="--/--" FontSize="10" Foreground="{DynamicResource WidgetText}" HorizontalAlignment="Center"/>
+                     </StackPanel>
+                     
+                     <!-- Day 3 -->
+                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                         <TextBlock x:Name="ForecastDay3Label" Text="--" FontSize="11" Foreground="{DynamicResource WidgetSubText}" HorizontalAlignment="Center"/>
+                         <TextBlock x:Name="ForecastDay3Icon" Text="&#xE2BD;" FontFamily="{StaticResource MaterialSymbolsOutlined}" Typography.StandardLigatures="True" Typography.ContextualLigatures="True" FontSize="18" Foreground="{DynamicResource WidgetText}" Margin="0,4" HorizontalAlignment="Center"/>
+                         <TextBlock x:Name="ForecastDay3Temp" Text="--/--" FontSize="10" Foreground="{DynamicResource WidgetText}" HorizontalAlignment="Center"/>
+                     </StackPanel>
+                 </Grid>
             </Grid>
             </Border>
         </Border>

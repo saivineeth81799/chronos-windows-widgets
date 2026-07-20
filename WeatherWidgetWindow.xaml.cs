@@ -399,12 +399,6 @@ namespace WpfWidgets
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             DesktopWindowHelper.SetRoundedWindowRegion(this, 8);
-            if (this.IsLoaded)
-            {
-                WidgetConfig.Current.WeatherWidth = e.NewSize.Width;
-                WidgetConfig.Current.WeatherHeight = e.NewSize.Height;
-                WidgetConfig.Save();
-            }
         }
 
         // Fetch Weather API
@@ -669,6 +663,7 @@ namespace WpfWidgets
 
         // Native Resizing
         private const int WM_NCHITTEST = 0x0084;
+        private const int WM_EXITSIZEMOVE = 0x0232;
         private const int HTLEFT = 10;
         private const int HTRIGHT = 11;
         private const int HTTOP = 12;
@@ -687,7 +682,16 @@ namespace WpfWidgets
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (msg == WM_NCHITTEST)
+            if (msg == WM_EXITSIZEMOVE)
+            {
+                WidgetConfig.Current.WeatherWidth = this.ActualWidth;
+                WidgetConfig.Current.WeatherHeight = this.ActualHeight;
+                WidgetConfig.Current.WeatherPositionX = this.Left;
+                WidgetConfig.Current.WeatherPositionY = this.Top;
+                WidgetConfig.Save();
+                LogHelper.Log($"[Size/Move] Saved Weather Widget layout: size={ActualWidth}x{ActualHeight}, pos={Left},{Top}");
+            }
+            else if (msg == WM_NCHITTEST)
             {
                 if (WidgetConfig.Current.WeatherLocked) return IntPtr.Zero;
 
