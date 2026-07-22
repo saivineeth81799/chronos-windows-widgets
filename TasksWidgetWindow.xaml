@@ -151,6 +151,8 @@
                                                        FontSize="12.5" 
                                                        FontWeight="SemiBold" 
                                                        Foreground="{DynamicResource WidgetText}" 
+                                                       Opacity="{Binding TaskOpacity}"
+                                                       TextDecorations="{Binding TitleDecorations}"
                                                        TextWrapping="Wrap" 
                                                        TextTrimming="CharacterEllipsis" 
                                                        MaxHeight="38" 

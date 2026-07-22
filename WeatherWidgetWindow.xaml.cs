@@ -905,17 +905,27 @@ namespace WpfWidgets
                 };
                 WeatherGraphCanvas.Children.Add(cursorLine);
 
-                // 4. Draw current temperature dot
+                // 4. Draw current temperature dot (outer glow ring + inner dot)
+                var currentDotGlow = new System.Windows.Shapes.Ellipse
+                {
+                    Width = 12.0,
+                    Height = 12.0,
+                    Fill = new SolidColorBrush(System.Windows.Media.Color.FromArgb(80, themeColor.R, themeColor.G, themeColor.B))
+                };
+                System.Windows.Controls.Canvas.SetLeft(currentDotGlow, xPoints[4] - 6.0);
+                System.Windows.Controls.Canvas.SetTop(currentDotGlow, yPoints[4] - 6.0);
+                WeatherGraphCanvas.Children.Add(currentDotGlow);
+
                 var currentDot = new System.Windows.Shapes.Ellipse
                 {
-                    Width = 6.0,
-                    Height = 6.0,
+                    Width = 7.5,
+                    Height = 7.5,
                     Fill = themeStrokeBrush,
-                    Stroke = new SolidColorBrush(IsLightTheme() ? System.Windows.Media.Colors.White : System.Windows.Media.Colors.Black),
-                    StrokeThickness = 1.0
+                    Stroke = new SolidColorBrush(IsLightTheme() ? System.Windows.Media.Colors.White : System.Windows.Media.Color.FromRgb(24, 24, 24)),
+                    StrokeThickness = 1.8
                 };
-                System.Windows.Controls.Canvas.SetLeft(currentDot, xPoints[4] - 3.0);
-                System.Windows.Controls.Canvas.SetTop(currentDot, yPoints[4] - 3.0);
+                System.Windows.Controls.Canvas.SetLeft(currentDot, xPoints[4] - 3.75);
+                System.Windows.Controls.Canvas.SetTop(currentDot, yPoints[4] - 3.75);
                 WeatherGraphCanvas.Children.Add(currentDot);
             }
         }

@@ -28,7 +28,7 @@
             <Border x:Name="WidgetCard"
                     Style="{StaticResource WidgetCardStyle}">
                 
-                <Grid Margin="16,16,16,4">
+                <Grid Margin="10,16,10,4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/> <!-- Header -->
                     <RowDefinition Height="*"/>    <!-- Current Weather -->
@@ -93,60 +93,60 @@
                      </Button>
                  </Grid>
 
-                 <!-- 2. Current Weather Info Grid -->
-                 <Grid Grid.Row="1" Margin="0,0,0,6">
-                     <Grid.ColumnDefinitions>
-                         <ColumnDefinition Width="Auto"/>
-                         <ColumnDefinition Width="*"/>
-                     </Grid.ColumnDefinitions>
-                     
-                     <!-- Graph Canvas behind the text -->
-                     <Canvas x:Name="WeatherGraphCanvas" 
-                             Grid.Column="0" 
-                             Grid.ColumnSpan="2" 
-                             HorizontalAlignment="Stretch" 
-                             VerticalAlignment="Stretch"
-                             Opacity="0.20"
-                             IsHitTestVisible="False"
-                             SizeChanged="WeatherGraphCanvas_SizeChanged"/>
-                     
-                     <!-- Temp and Icon -->
-                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                         <TextBlock x:Name="CurrentConditionIcon"
-                                    Text="&#xE2BD;" 
-                                    FontFamily="{StaticResource MaterialSymbolsOutlined}"
-                                    Typography.StandardLigatures="True"
-                                    Typography.ContextualLigatures="True"
-                                    FontSize="38"
-                                    Foreground="#FFFBBC05"
-                                    VerticalAlignment="Center"
-                                    Margin="0,0,10,0"/>
-                         <TextBlock x:Name="CurrentTempText"
-                                    Text="--°"
-                                    FontSize="36"
-                                    FontWeight="SemiBold"
-                                    FontFamily="{DynamicResource WidgetFont}"
-                                    Foreground="{DynamicResource WidgetText}"
-                                    VerticalAlignment="Center"/>
-                     </StackPanel>
+                  <!-- 2. Current Weather Info Grid -->
+                  <Grid Grid.Row="1" Margin="0,0,0,6">
+                      <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="*"/>
+                          <ColumnDefinition Width="Auto"/>
+                      </Grid.ColumnDefinitions>
+                      
+                      <!-- Graph Canvas behind the text -->
+                      <Canvas x:Name="WeatherGraphCanvas" 
+                              Grid.Column="0" 
+                              Grid.ColumnSpan="2" 
+                              HorizontalAlignment="Stretch" 
+                              VerticalAlignment="Stretch"
+                              Opacity="0.15"
+                              IsHitTestVisible="False"
+                              SizeChanged="WeatherGraphCanvas_SizeChanged"/>
+                      
+                      <!-- Condition details (Left Side) -->
+                      <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0">
+                          <TextBlock x:Name="ConditionLabel"
+                                     Text="Loading..."
+                                     FontSize="13.5"
+                                     FontWeight="SemiBold"
+                                     FontFamily="{DynamicResource WidgetFont}"
+                                     Foreground="{DynamicResource WidgetText}"
+                                     TextTrimming="CharacterEllipsis"/>
+                          <TextBlock x:Name="TempRangeLabel"
+                                     Text="H: --°  L: --°"
+                                     FontSize="10.5"
+                                     FontFamily="{DynamicResource WidgetFont}"
+                                     Foreground="{DynamicResource WidgetSubText}"
+                                     Margin="0,2,0,0"/>
+                      </StackPanel>
 
-                     <!-- Condition details -->
-                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,0,0">
-                         <TextBlock x:Name="ConditionLabel"
-                                    Text="Loading..."
-                                    FontSize="13.5"
-                                    FontWeight="SemiBold"
-                                    FontFamily="{DynamicResource WidgetFont}"
-                                    Foreground="{DynamicResource WidgetText}"
-                                    TextTrimming="CharacterEllipsis"/>
-                         <TextBlock x:Name="TempRangeLabel"
-                                    Text="H: --°  L: --°"
-                                    FontSize="10.5"
-                                    FontFamily="{DynamicResource WidgetFont}"
-                                    Foreground="{DynamicResource WidgetSubText}"
-                                    Margin="0,2,0,0"/>
-                     </StackPanel>
-                 </Grid>
+                      <!-- Temp and Icon (Right Side) -->
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                          <TextBlock x:Name="CurrentConditionIcon"
+                                     Text="&#xE2BD;" 
+                                     FontFamily="{StaticResource MaterialSymbolsOutlined}"
+                                     Typography.StandardLigatures="True"
+                                     Typography.ContextualLigatures="True"
+                                     FontSize="38"
+                                     Foreground="#FFFBBC05"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,8,0"/>
+                          <TextBlock x:Name="CurrentTempText"
+                                     Text="--°"
+                                     FontSize="36"
+                                     FontWeight="SemiBold"
+                                     FontFamily="{DynamicResource WidgetFont}"
+                                     Foreground="{DynamicResource WidgetText}"
+                                     VerticalAlignment="Center"/>
+                      </StackPanel>
+                  </Grid>
 
                  <!-- 3. Separator -->
                  <Separator Grid.Row="2" Background="{DynamicResource WidgetBorder}" Margin="0,0,0,10"/>

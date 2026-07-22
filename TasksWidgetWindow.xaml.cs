@@ -114,18 +114,26 @@ namespace WpfWidgets
                     var items = JsonSerializer.Deserialize<List<WidgetTaskItem>>(cache);
                     if (items != null)
                     {
+                        LogHelper.Log($"[TasksWidget] Loaded {items.Count} cached task item(s).");
                         UpdateTasksList(items);
                     }
+                }
+                else
+                {
+                    LogHelper.Log("[TasksWidget] Cached tasks cache is empty or null.");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[TasksWidget] Error loading cached tasks: {ex.Message}");
+                LogHelper.Log($"[TasksWidget] Error loading cached tasks: {ex.Message}");
             }
         }
 
         public void UpdateTasksList(List<WidgetTaskItem> tasks)
         {
+            int count = tasks?.Count ?? 0;
+            LogHelper.Log($"[TasksWidget] UpdateTasksList called with {count} task item(s).");
+
             if (tasks == null || tasks.Count == 0)
             {
                 EmptyStateText.Visibility = Visibility.Visible;
@@ -225,6 +233,7 @@ namespace WpfWidgets
 
         private async void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
+            LogHelper.Log("[TasksWidget] Refresh button clicked by user. Initiating Firebase sync...");
             var app = System.Windows.Application.Current as App;
             if (app?.SyncService != null)
             {

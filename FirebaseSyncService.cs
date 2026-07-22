@@ -444,8 +444,37 @@ namespace WpfWidgets
             }
         }
 
+        private static string? _appLogoBase64;
+        private static string GetAppLogoBase64()
+        {
+            if (_appLogoBase64 != null) return _appLogoBase64;
+            try
+            {
+                string logoPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chronos-logo-76.png");
+                if (!System.IO.File.Exists(logoPath))
+                {
+                    logoPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "chronos-logo-76.png");
+                }
+                if (System.IO.File.Exists(logoPath))
+                {
+                    byte[] bytes = System.IO.File.ReadAllBytes(logoPath);
+                    _appLogoBase64 = "data:image/png;base64," + Convert.ToBase64String(bytes);
+                    return _appLogoBase64;
+                }
+            }
+            catch { }
+            return "";
+        }
+
         private string GetOAuthCallbackHtml(bool success, string title, string header, string description)
         {
+            string logoSrc = GetAppLogoBase64();
+            string appLogoMarkup = !string.IsNullOrEmpty(logoSrc)
+                ? $"<img src=\"{logoSrc}\" alt=\"Chronos Widgets\" style=\"width: 24px; height: 24px; object-fit: contain; border-radius: 6px;\" />"
+                : @"<svg width=""22"" height=""22"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round"">
+                        <circle cx=""12"" cy=""12"" r=""10"" stroke=""rgba(255,255,255,0.7)"" />
+                        <polyline points=""12 6 12 12 16 14"" stroke=""#818cf8"" stroke-width=""2.5"" />
+                    </svg>";
             string accent = success ? "#6366f1" : "#ef4444";
             string accentHover = success ? "#4f46e5" : "#dc2626";
             string accentShadow = success ? "rgba(99, 102, 241, 0.3)" : "rgba(239, 68, 68, 0.2)";
@@ -467,7 +496,10 @@ namespace WpfWidgets
                     </svg>";
 
             string pulseMarkup = success
-                ? @"<div class=""connector-pulse""></div>"
+                ? @"<div class=""connector-beam""></div>
+                   <div class=""connector-badge"">
+                       <svg viewBox=""0 0 24 24""><path d=""M20 6L9 17l-5-5"" stroke-linecap=""round"" stroke-linejoin=""round""/></svg>
+                   </div>"
                 : "";
 
             string clockStrokeColor = success ? "#818cf8" : "#ef4444";
@@ -554,26 +586,56 @@ namespace WpfWidgets
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
+            width: 44px;
             height: 2px;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
             position: relative;
-            border-radius: 1px;
-            overflow: hidden;
+            border-radius: 2px;
+            transition: all 0.5s ease;
         }}
 
-        .connector-pulse {{
+        .connector-beam {{
             position: absolute;
-            height: 100%;
-            width: 12px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent);
-            left: -12px;
-            animation: pulseSlide 2s infinite ease-in-out;
+            inset: 0;
+            background: var(--status-color);
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transform-origin: center;
+            animation: beamGlow 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }}
 
-        @keyframes pulseSlide {{
-            0% {{ left: -12px; }}
-            100% {{ left: 40px; }}
+        .connector-badge {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 14px;
+            height: 14px;
+            background: var(--status-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+            animation: badgePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s forwards;
+        }}
+
+        .connector-badge svg {{
+            width: 8px;
+            height: 8px;
+            stroke: #09090b;
+            stroke-width: 3.5;
+            fill: none;
+        }}
+
+        @keyframes beamGlow {{
+            0% {{ opacity: 0; transform: scaleX(0); }}
+            100% {{ opacity: 1; transform: scaleX(1); }}
+        }}
+
+        @keyframes badgePop {{
+            0% {{ transform: translate(-50%, -50%) scale(0); }}
+            100% {{ transform: translate(-50%, -50%) scale(1); }}
         }}
 
         .status-icon-wrapper {{
@@ -697,10 +759,7 @@ namespace WpfWidgets
     <div class=""card"">
         <div class=""logo-container"">
             <div class=""logo-icon"" title=""Chronos Widgets"">
-                <svg width=""22"" height=""22"" viewBox=""0 0 24 24"" fill=""none"" stroke=""currentColor"" stroke-width=""2"" stroke-linecap=""round"" stroke-linejoin=""round"">
-                    <circle cx=""12"" cy=""12"" r=""10"" stroke=""rgba(255,255,255,0.7)"" />
-                    <polyline points=""12 6 12 12 16 14"" stroke=""{clockStrokeColor}"" stroke-width=""2.5"" />
-                </svg>
+                {appLogoMarkup}
             </div>
             <div class=""connector"">
                 {pulseMarkup}
@@ -850,6 +909,7 @@ namespace WpfWidgets
                 }
                 
                 _idToken = newIdToken;
+                LogHelper.Log($"[FirebaseSync] Active ID Token: {_idToken}");
                 IsLoggedIn = true;
                 return newIdToken;
             }
@@ -1817,10 +1877,11 @@ namespace WpfWidgets
         {
             try
             {
-                LogHelper.Log("[FirebaseSync] SyncTasks started.");
+                LogHelper.Log($"[FirebaseSync] SyncTasks started. ACTIVE BEARER ID TOKEN: {idToken}");
 
                 // 1. Fetch Focus Settings to get the active view ID from mobile
                 string focusSettingsUrl = $"https://firestore.googleapis.com/v1/projects/chronos-9a892/databases/(default)/documents/users/{userId}/preferences/focusSettings";
+                LogHelper.Log($"[FirebaseSync] Fetching focusSettings from Firestore: {focusSettingsUrl}");
                 var focusReq = new HttpRequestMessage(HttpMethod.Get, focusSettingsUrl);
                 focusReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", idToken);
                 var focusResp = await _httpClient.SendAsync(focusReq);
@@ -1829,17 +1890,19 @@ namespace WpfWidgets
                 if (focusResp.IsSuccessStatusCode)
                 {
                     string focusJson = await focusResp.Content.ReadAsStringAsync();
+                    LogHelper.Log($"[FirebaseSync] Raw focusSettings JSON from Firebase: {focusJson}");
                     using var focusDoc = JsonDocument.Parse(focusJson);
                     if (focusDoc.RootElement.TryGetProperty("fields", out var fields))
                     {
                         if (fields.TryGetProperty("activeViewId", out var avProp) && avProp.TryGetProperty("stringValue", out var avVal))
                             activeViewId = avVal.GetString();
                     }
-                    LogHelper.Log($"[FirebaseSync] focusSettings activeViewId from mobile: '{activeViewId}'");
+                    LogHelper.Log($"[FirebaseSync] focusSettings activeViewId resolved from mobile: '{activeViewId}'");
                 }
                 else
                 {
-                    LogHelper.Log($"[FirebaseSync] focusSettings fetch status code: {focusResp.StatusCode}");
+                    string focusErr = await focusResp.Content.ReadAsStringAsync();
+                    LogHelper.Log($"[FirebaseSync] focusSettings fetch failed (StatusCode={focusResp.StatusCode}): {focusErr}");
                 }
 
                 // 1b. Fetch all custom views to populate settings options & resolve settings
@@ -1847,6 +1910,7 @@ namespace WpfWidgets
                 try
                 {
                     string customViewsUrl = $"https://firestore.googleapis.com/v1/projects/chronos-9a892/databases/(default)/documents/users/{userId}/preferences/focusSettings/customViews";
+                    LogHelper.Log($"[FirebaseSync] Fetching customViews from Firestore: {customViewsUrl}");
                     var viewsReq = new HttpRequestMessage(HttpMethod.Get, customViewsUrl);
                     viewsReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", idToken);
                     var viewsResp = await _httpClient.SendAsync(viewsReq);
@@ -1854,6 +1918,7 @@ namespace WpfWidgets
                     if (viewsResp.IsSuccessStatusCode)
                     {
                         string viewsJson = await viewsResp.Content.ReadAsStringAsync();
+                        LogHelper.Log($"[FirebaseSync] Raw customViews JSON response received (length={viewsJson.Length}).");
                         customViews = ParseFirestoreCustomViews(viewsJson);
                         LogHelper.Log($"[FirebaseSync] Successfully parsed {customViews.Count} custom views from Firestore.");
                         
@@ -1863,7 +1928,8 @@ namespace WpfWidgets
                     }
                     else
                     {
-                        LogHelper.Log($"[FirebaseSync] customViews fetch status code: {viewsResp.StatusCode}");
+                        string viewsErr = await viewsResp.Content.ReadAsStringAsync();
+                        LogHelper.Log($"[FirebaseSync] customViews fetch failed (StatusCode={viewsResp.StatusCode}): {viewsErr}");
                     }
                 }
                 catch (Exception ex)
@@ -1878,6 +1944,7 @@ namespace WpfWidgets
                 var filterCategories = new List<string>();
                 var filterPriorities = new List<string>();
                 var filterStatuses = new List<string>();
+                var groupOrders = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
                 string selectedViewId = WidgetConfig.Current.TasksSelectedViewId;
                 string? targetViewId = null;
@@ -1904,13 +1971,14 @@ namespace WpfWidgets
                         filterCategories = targetView.FilterCategories;
                         filterPriorities = targetView.FilterPriorities;
                         filterStatuses = targetView.FilterStatuses;
+                        groupOrders = targetView.GroupOrders;
 
-                        LogHelper.Log($"[FirebaseSync] Applied Custom View settings: group={groupOption}, sort={sortOption} ({sortDirection}), " +
-                                     $"filterCategoriesCount={filterCategories.Count}, filterPrioritiesCount={filterPriorities.Count}, filterStatusesCount={filterStatuses.Count}");
+                        LogHelper.Log($"[FirebaseSync] Applied Custom View '{targetView.Name}' (ID: '{targetView.Id}') settings: group={groupOption}, sort={sortOption} ({sortDirection}), " +
+                                     $"filterCategories=[{string.Join(", ", filterCategories)}], filterPriorities=[{string.Join(", ", filterPriorities)}], filterStatuses=[{string.Join(", ", filterStatuses)}], groupOrdersCount={groupOrders.Count}");
                     }
                     else
                     {
-                        LogHelper.Log($"[FirebaseSync] Selected view ID '{targetViewId}' not found. Falling back to plain view.");
+                        LogHelper.Log($"[FirebaseSync] Selected view ID '{targetViewId}' not found in {customViews.Count} custom views. Falling back to plain view.");
                     }
                 }
 
@@ -1943,64 +2011,111 @@ namespace WpfWidgets
                 LogHelper.Log($"[FirebaseSync] Status labels mapping resolved: " +
                              $"1='{statusLabels["1"]}', 2='{statusLabels["2"]}', 3='{statusLabels["3"]}'");
 
-                // 3. Fetch Tasks via runQuery (Only active tasks status 1 or 2)
+                // 3. Fetch Active Tasks (Status 1 or 2, limit 200) and Done Tasks (Status 3, limit 10)
                 string tasksUrl = $"https://firestore.googleapis.com/v1/projects/chronos-9a892/databases/(default)/documents/users/{userId}:runQuery";
-                var tasksReq = new HttpRequestMessage(HttpMethod.Post, tasksUrl);
-                tasksReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", idToken);
                 
-                string queryJson = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"tasks\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"IN\",\"value\":{\"arrayValue\":{\"values\":[{\"stringValue\":\"1\"},{\"stringValue\":\"2\"}]}}}},\"limit\":200}}";
-                tasksReq.Content = new StringContent(queryJson, System.Text.Encoding.UTF8, "application/json");
-
-                var tasksResp = await _httpClient.SendAsync(tasksReq);
                 var tasks = new List<TaskItem>();
-                if (tasksResp.IsSuccessStatusCode)
+
+                // 3a. Active Tasks Query
+                try
                 {
-                    string tasksJson = await tasksResp.Content.ReadAsStringAsync();
-                    tasks = ParseFirestoreTasksRunQuery(tasksJson);
-                    LogHelper.Log($"[FirebaseSync] Fetched {tasks.Count} raw active tasks from Firestore using runQuery.");
+                    var activeReq = new HttpRequestMessage(HttpMethod.Post, tasksUrl);
+                    activeReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", idToken);
+                    string activeQueryJson = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"tasks\"}],\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"IN\",\"value\":{\"arrayValue\":{\"values\":[{\"stringValue\":\"1\"},{\"stringValue\":\"2\"}]}}}},\"limit\":200}}";
+                    activeReq.Content = new StringContent(activeQueryJson, System.Text.Encoding.UTF8, "application/json");
+
+                    var activeResp = await _httpClient.SendAsync(activeReq);
+                    if (activeResp.IsSuccessStatusCode)
+                    {
+                        string activeJson = await activeResp.Content.ReadAsStringAsync();
+                        var activeList = ParseFirestoreTasksRunQuery(activeJson);
+                        tasks.AddRange(activeList);
+                        LogHelper.Log($"[FirebaseSync] Fetched {activeList.Count} active tasks (status 1 & 2) via runQuery.");
+                    }
+                    else
+                    {
+                        string err = await activeResp.Content.ReadAsStringAsync();
+                        LogHelper.Log($"[FirebaseSync] Active tasks runQuery failed: {activeResp.StatusCode} - {err}");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    string errContent = await tasksResp.Content.ReadAsStringAsync();
-                    LogHelper.Log($"[FirebaseSync] Failed to fetch tasks via runQuery: {tasksResp.StatusCode} - {errContent}");
+                    LogHelper.Log($"[FirebaseSync] Exception fetching active tasks: {ex.Message}");
                 }
 
-                // 4. Process Tasks (Filter active tasks - Status "1" or "2")
-                var activeStatuses = new HashSet<string> { "1", "2" };
+                // 3b. Done Tasks Query (Matching Mobile: status = "3" AND lastUpdatedAt > 30 days ago)
+                try
+                {
+                    long thirtyDaysAgoMs = DateTimeOffset.UtcNow.AddDays(-30).ToUnixTimeMilliseconds();
+
+                    var doneReq = new HttpRequestMessage(HttpMethod.Post, tasksUrl);
+                    doneReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", idToken);
+                    string doneQueryJson = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"tasks\"}],\"where\":{\"compositeFilter\":{\"op\":\"AND\",\"filters\":[{\"fieldFilter\":{\"field\":{\"fieldPath\":\"status\"},\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"3\"}}},{\"fieldFilter\":{\"field\":{\"fieldPath\":\"lastUpdatedAt\"},\"op\":\"GREATER_THAN\",\"value\":{\"integerValue\":\"" + thirtyDaysAgoMs + "\"}}}]}},\"limit\":50}}";
+                    doneReq.Content = new StringContent(doneQueryJson, System.Text.Encoding.UTF8, "application/json");
+
+                    var doneResp = await _httpClient.SendAsync(doneReq);
+                    if (doneResp.IsSuccessStatusCode)
+                    {
+                        string doneJson = await doneResp.Content.ReadAsStringAsync();
+                        var doneList = ParseFirestoreTasksRunQuery(doneJson);
+
+                        // Sort descending by lastUpdatedAt, cap at top 10 (matching mobile)
+                        doneList.Sort((a, b) => (b.LastUpdatedAt > 0 ? b.LastUpdatedAt : b.CreatedAt).CompareTo(a.LastUpdatedAt > 0 ? a.LastUpdatedAt : a.CreatedAt));
+                        
+                        var top10Done = doneList.FindAll(t => true);
+                        if (top10Done.Count > 10) top10Done = top10Done.GetRange(0, 10);
+
+                        tasks.AddRange(top10Done);
+                        LogHelper.Log($"[FirebaseSync] Fetched {top10Done.Count} recent done tasks (last 30 days, max 10) matching mobile logic.");
+                    }
+                    else
+                    {
+                        string err = await doneResp.Content.ReadAsStringAsync();
+                        LogHelper.Log($"[FirebaseSync] Done tasks runQuery failed: {doneResp.StatusCode} - {err}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.Log($"[FirebaseSync] Exception fetching done tasks: {ex.Message}");
+                }
+
+                // 4. Process Combined Tasks
+                var activeStatuses = new HashSet<string> { "1", "2", "3" };
                 var activeTasks = tasks.FindAll(t => activeStatuses.Contains(t.Status));
-                LogHelper.Log($"[FirebaseSync] Active tasks count (status '1' or '2'): {activeTasks.Count}");
+                LogHelper.Log($"[FirebaseSync] Total processed tasks count (status '1', '2', or '3'): {activeTasks.Count}");
 
                 // Log names and status of active tasks for debugging
                 foreach (var at in activeTasks)
                 {
-                    LogHelper.Log($"  -> Active Task: '{at.Title}' (ID={at.Id}, Status={at.Status}, Priority={at.Priority}, Category={at.Category})");
+                    LogHelper.Log($"  -> Task: '{at.Title}' (ID={at.Id}, Status={at.Status}, Priority={at.Priority}, Category={at.Category})");
                 }
+
+                // Separate active tasks (Status 1 & 2) and done tasks (Status 3)
+                var toProcessTasks = activeTasks.FindAll(t => t.Status != "3");
+                var doneTasks = activeTasks.FindAll(t => t.Status == "3");
 
                 bool hasActiveView = !string.IsNullOrEmpty(targetViewId);
 
                 if (hasActiveView)
                 {
-                    // Apply custom view multi-select filters
+                    // Apply custom view multi-select filters to active tasks (doneTasks are displayed unfiltered, matching mobile)
                     if (filterCategories.Count > 0)
                     {
                         var lowerCats = filterCategories.ConvertAll(c => c.ToLower());
-                        activeTasks = activeTasks.FindAll(t => lowerCats.Contains((t.Category ?? "").ToLower()));
-                        LogHelper.Log($"[FirebaseSync] Tasks after category filter (count={filterCategories.Count}): {activeTasks.Count}");
+                        toProcessTasks = toProcessTasks.FindAll(t => lowerCats.Contains((t.Category ?? "").ToLower()));
                     }
                     if (filterPriorities.Count > 0)
                     {
                         var lowerPris = filterPriorities.ConvertAll(p => p.ToLower());
-                        activeTasks = activeTasks.FindAll(t => lowerPris.Contains((t.Priority ?? "").ToLower()));
-                        LogHelper.Log($"[FirebaseSync] Tasks after priority filter (count={filterPriorities.Count}): {activeTasks.Count}");
+                        toProcessTasks = toProcessTasks.FindAll(t => lowerPris.Contains((t.Priority ?? "").ToLower()));
                     }
                     if (filterStatuses.Count > 0)
                     {
-                        activeTasks = activeTasks.FindAll(t => filterStatuses.Contains(t.Status));
-                        LogHelper.Log($"[FirebaseSync] Tasks after status filter (count={filterStatuses.Count}): {activeTasks.Count}");
+                        toProcessTasks = toProcessTasks.FindAll(t => filterStatuses.Contains(t.Status));
                     }
 
-                    // Sort Tasks
-                    activeTasks.Sort((a, b) =>
+                    // Sort Active Tasks
+                    toProcessTasks.Sort((a, b) =>
                     {
                         int comparison = 0;
                         switch (sortOption)
@@ -2028,18 +2143,27 @@ namespace WpfWidgets
                         }
                         return sortDirection == "asc" ? comparison : -comparison;
                     });
+
+                    // Sort Done Tasks by LastUpdatedAt descending
+                    doneTasks.Sort((a, b) => b.LastUpdatedAt.CompareTo(a.LastUpdatedAt));
                 }
                 else
                 {
-                    // Bypass grouping and sorting when no active custom view
                     groupOption = "none";
                 }
 
-                // Group Tasks
+                // If grouping by status, merge doneTasks back into toProcessTasks so status grouping handles it
+                if (groupOption == "status")
+                {
+                    toProcessTasks.AddRange(doneTasks);
+                    doneTasks.Clear();
+                }
+
+                // Group & Build Widget Items List
                 var widgetItems = new List<WidgetTaskItem>();
                 if (groupOption == "none")
                 {
-                    foreach (var task in activeTasks)
+                    foreach (var task in toProcessTasks)
                     {
                         widgetItems.Add(ConvertToWidgetTask(task));
                     }
@@ -2049,7 +2173,7 @@ namespace WpfWidgets
                     var grouped = new Dictionary<string, List<TaskItem>>();
                     var groupOrder = new List<string>();
 
-                    foreach (var task in activeTasks)
+                    foreach (var task in toProcessTasks)
                     {
                         string groupKey = "Uncategorized";
                         switch (groupOption)
@@ -2089,22 +2213,67 @@ namespace WpfWidgets
                         grouped[groupKey].Add(task);
                     }
 
-                    // For 'date' grouping, apply standard sorting order
-                    if (groupOption == "date")
+                    // Apply group ordering matching mobile logic
+                    if (groupOption == "category" && groupOrders.TryGetValue("category", out var catOrder) && catOrder.Count > 0)
+                    {
+                        var orderedList = new List<string>();
+                        foreach (var cat in catOrder)
+                        {
+                            var matchKey = groupOrder.Find(k => string.Equals(k, cat, StringComparison.OrdinalIgnoreCase));
+                            if (matchKey != null) orderedList.Add(matchKey);
+                        }
+                        foreach (var key in groupOrder)
+                        {
+                            if (!orderedList.Contains(key)) orderedList.Add(key);
+                        }
+                        groupOrder = orderedList;
+                    }
+                    else if (groupOption == "priority" && groupOrders.TryGetValue("priority", out var priOrder) && priOrder.Count > 0)
+                    {
+                        var orderedList = new List<string>();
+                        foreach (var priority in priOrder)
+                        {
+                            string targetLower = $"{priority.ToLower()} priority";
+                            var matchKey = groupOrder.Find(k => string.Equals(k.ToLower(), targetLower, StringComparison.OrdinalIgnoreCase));
+                            if (matchKey != null) orderedList.Add(matchKey);
+                        }
+                        foreach (var key in groupOrder)
+                        {
+                            if (!orderedList.Contains(key)) orderedList.Add(key);
+                        }
+                        groupOrder = orderedList;
+                    }
+                    else if (groupOption == "status" && groupOrders.TryGetValue("status", out var statusOrder) && statusOrder.Count > 0)
+                    {
+                        var orderedList = new List<string>();
+                        foreach (var statusKey in statusOrder)
+                        {
+                            string headerLabel = statusLabels.TryGetValue(statusKey, out var lbl) ? lbl : statusKey;
+                            var matchKey = groupOrder.Find(k => string.Equals(k, headerLabel, StringComparison.OrdinalIgnoreCase) || string.Equals(k, statusKey, StringComparison.OrdinalIgnoreCase));
+                            if (matchKey != null) orderedList.Add(matchKey);
+                        }
+                        foreach (var key in groupOrder)
+                        {
+                            if (!orderedList.Contains(key)) orderedList.Add(key);
+                        }
+                        groupOrder = orderedList;
+                    }
+                    else if (groupOption == "date")
                     {
                         var standardOrder = new List<string> { "Overdue", "Today", "This Week", "Later" };
-                        groupOrder.Clear();
+                        var orderedList = new List<string>();
                         foreach (var key in standardOrder)
                         {
-                            if (grouped.ContainsKey(key)) groupOrder.Add(key);
+                            if (grouped.ContainsKey(key)) orderedList.Add(key);
                         }
                         foreach (var key in grouped.Keys)
                         {
-                            if (!standardOrder.Contains(key)) groupOrder.Add(key);
+                            if (!standardOrder.Contains(key)) orderedList.Add(key);
                         }
+                        groupOrder = orderedList;
                     }
 
-                    // Add to widget items with header markers
+                    // Add active tasks to widget items with header markers
                     foreach (var gName in groupOrder)
                     {
                         widgetItems.Add(new WidgetTaskItem
@@ -2117,6 +2286,22 @@ namespace WpfWidgets
                         {
                             widgetItems.Add(ConvertToWidgetTask(task));
                         }
+                    }
+                }
+
+                // Append Done tasks in separate bottom section if present
+                if (doneTasks.Count > 0 && groupOption != "status")
+                {
+                    string doneLabel = statusLabels.TryGetValue("3", out var dLbl) ? dLbl : "Done";
+                    widgetItems.Add(new WidgetTaskItem
+                    {
+                        Type = "Header",
+                        Title = $"── {doneLabel} ──"
+                    });
+
+                    foreach (var task in doneTasks)
+                    {
+                        widgetItems.Add(ConvertToWidgetTask(task));
                     }
                 }
 
@@ -2224,10 +2409,13 @@ namespace WpfWidgets
                                 view.FilterPriorities = ParseFirestoreArray(fpProp);
                             if (fields.TryGetProperty("filterStatuses", out var fsProp))
                                 view.FilterStatuses = ParseFirestoreArray(fsProp);
+                            if (fields.TryGetProperty("groupOrders", out var goMapProp))
+                                view.GroupOrders = ParseFirestoreGroupOrders(goMapProp);
 
                             if (!string.IsNullOrEmpty(view.Id))
                             {
                                 viewsList.Add(view);
+                                LogHelper.Log($"[FirebaseSync] Parsed CustomView -> ID: '{view.Id}', Name: '{view.Name}', GroupOption: '{view.GroupOption}', SortOption: '{view.SortOption}', SortDirection: '{view.SortDirection}', CategoriesCount: {view.FilterCategories.Count}, PrioritiesCount: {view.FilterPriorities.Count}, StatusesCount: {view.FilterStatuses.Count}, GroupOrdersKeysCount: {view.GroupOrders.Count}");
                             }
                         }
                     }
@@ -2238,6 +2426,27 @@ namespace WpfWidgets
                 LogHelper.Log($"[FirebaseSync] Error parsing Firestore custom views: {ex.Message}");
             }
             return viewsList;
+        }
+
+        private Dictionary<string, List<string>> ParseFirestoreGroupOrders(JsonElement prop)
+        {
+            var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                if (prop.TryGetProperty("mapValue", out var mapValue) && mapValue.TryGetProperty("fields", out var fields))
+                {
+                    foreach (var field in fields.EnumerateObject())
+                    {
+                        var list = ParseFirestoreArray(field.Value);
+                        dict[field.Name] = list;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[FirebaseSync] Error parsing groupOrders map: {ex.Message}");
+            }
+            return dict;
         }
 
         private List<TaskItem> ParseFirestoreTasks(string json)
@@ -2294,6 +2503,14 @@ namespace WpfWidgets
                                     task.CreatedAt = crInt;
                                 else if (crProp.TryGetProperty("doubleValue", out var crDouble))
                                     task.CreatedAt = (long)crDouble.GetDouble();
+                            }
+
+                            if (fields.TryGetProperty("lastUpdatedAt", out var luProp))
+                            {
+                                if (luProp.TryGetProperty("integerValue", out var luStr) && long.TryParse(luStr.GetString(), out long luInt))
+                                    task.LastUpdatedAt = luInt;
+                                else if (luProp.TryGetProperty("doubleValue", out var luDouble))
+                                    task.LastUpdatedAt = (long)luDouble.GetDouble();
                             }
 
                             list.Add(task);
@@ -2358,12 +2575,20 @@ namespace WpfWidgets
                                         task.DueDate = (long)ddDouble.GetDouble();
                                 }
 
-                                if (fields.TryGetProperty("createdAt", out var crProp))
+                                if (fields.TryGetProperty("createdAt", out var crProp2))
                                 {
-                                    if (crProp.TryGetProperty("integerValue", out var crStr) && long.TryParse(crStr.GetString(), out long crInt))
-                                        task.CreatedAt = crInt;
-                                    else if (crProp.TryGetProperty("doubleValue", out var crDouble))
-                                        task.CreatedAt = (long)crDouble.GetDouble();
+                                    if (crProp2.TryGetProperty("integerValue", out var crStr2) && long.TryParse(crStr2.GetString(), out long crInt2))
+                                        task.CreatedAt = crInt2;
+                                    else if (crProp2.TryGetProperty("doubleValue", out var crDouble2))
+                                        task.CreatedAt = (long)crDouble2.GetDouble();
+                                }
+
+                                if (fields.TryGetProperty("lastUpdatedAt", out var luProp2))
+                                {
+                                    if (luProp2.TryGetProperty("integerValue", out var luStr2) && long.TryParse(luStr2.GetString(), out long luInt2))
+                                        task.LastUpdatedAt = luInt2;
+                                    else if (luProp2.TryGetProperty("doubleValue", out var luDouble2))
+                                        task.LastUpdatedAt = (long)luDouble2.GetDouble();
                                 }
 
                                 list.Add(task);
@@ -2434,6 +2659,12 @@ namespace WpfWidgets
         public System.Windows.Visibility ChecklistProgressVisibility => (Type == "Task" && HasChecklist) ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
 
         [System.Text.Json.Serialization.JsonIgnore]
+        public double TaskOpacity => Status == "3" ? 0.6 : 1.0;
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public System.Windows.TextDecorationCollection? TitleDecorations => Status == "3" ? System.Windows.TextDecorations.Strikethrough : null;
+
+        [System.Text.Json.Serialization.JsonIgnore]
         public System.Windows.Media.Brush PriorityBrush
         {
             get
@@ -2460,5 +2691,6 @@ namespace WpfWidgets
         public List<string> FilterCategories { get; set; } = new();
         public List<string> FilterPriorities { get; set; } = new();
         public List<string> FilterStatuses { get; set; } = new();
+        public Dictionary<string, List<string>> GroupOrders { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }
