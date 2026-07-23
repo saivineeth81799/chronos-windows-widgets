@@ -28,7 +28,7 @@
             <Border x:Name="WidgetCard"
                     Style="{StaticResource WidgetCardStyle}">
                 
-                <Grid Margin="10,16,10,4">
+                <Grid Margin="14,16,14,4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/> <!-- Header -->
                     <RowDefinition Height="*"/>    <!-- Current Weather -->
@@ -51,7 +51,8 @@
                                FontFamily="{DynamicResource WidgetFont}"
                                Foreground="{DynamicResource WidgetText}"
                                TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Center"/>
+                               VerticalAlignment="Center"
+                               Margin="2,0,0,0"/>
 
                      <!-- Refresh Button -->
                      <Button Grid.Column="1"
@@ -100,12 +101,13 @@
                           <ColumnDefinition Width="Auto"/>
                       </Grid.ColumnDefinitions>
                       
-                      <!-- Graph Canvas behind the text -->
+                      <!-- Graph Canvas behind the text (spans edge-to-edge without padding) -->
                       <Canvas x:Name="WeatherGraphCanvas" 
                               Grid.Column="0" 
                               Grid.ColumnSpan="2" 
                               HorizontalAlignment="Stretch" 
                               VerticalAlignment="Stretch"
+                              Margin="-14,0,-14,0"
                               Opacity="0.15"
                               IsHitTestVisible="False"
                               SizeChanged="WeatherGraphCanvas_SizeChanged"/>
