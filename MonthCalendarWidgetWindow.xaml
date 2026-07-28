@@ -1,0 +1,517 @@
+<Window x:Class="WpfWidgets.MonthCalendarWidgetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Month Calendar Widget" 
+        Height="330" 
+        Width="580"
+        MinHeight="250"
+        MinWidth="450"
+        WindowStyle="None" 
+        AllowsTransparency="True" 
+        Background="Transparent"
+        ShowInTaskbar="False"
+        WindowStartupLocation="Manual"
+        Topmost="False"
+        ResizeMode="CanResize"
+        SizeChanged="Window_SizeChanged"
+        Icon="/app-icon-light.ico">
+    
+    <Window.Resources>
+        <!-- Modern CalendarDayButton Style -->
+        <Style x:Key="ModernCalendarDayButtonStyle" TargetType="CalendarDayButton">
+            <Setter Property="MinWidth" Value="28"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource WidgetText}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CalendarDayButton">
+                        <Grid x:Name="DayCellGrid" Margin="1">
+                            <!-- Round pill background for selection / hover -->
+                            <Border x:Name="DayBackground"
+                                    CornerRadius="14"
+                                    Background="Transparent"/>
+                            
+                            <!-- Accent outline for Today -->
+                            <Border x:Name="TodayOutline"
+                                    CornerRadius="14"
+                                    BorderThickness="1.5"
+                                    BorderBrush="#3B82F6"
+                                    Visibility="Collapsed"/>
+                            
+                            <!-- Day Number Text -->
+                            <ContentPresenter x:Name="NormalText"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <!-- Inactive/Other Month Dates -->
+                            <Trigger Property="IsInactive" Value="True">
+                                <Setter Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                            <!-- Mouse Over -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="DayBackground" Property="Background" Value="#25FFFFFF"/>
+                            </Trigger>
+                            <!-- Selected Date -->
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="DayBackground" Property="Background" Value="#3B82F6"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                            <!-- Today Date -->
+                            <Trigger Property="IsToday" Value="True">
+                                <Setter TargetName="TodayOutline" Property="Visibility" Value="Visible"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsToday" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="DayBackground" Property="Background" Value="#3B82F6"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="TodayOutline" Property="Visibility" Value="Collapsed"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern CalendarButton Style (Month/Year View Buttons) -->
+        <Style x:Key="ModernCalendarButtonStyle" TargetType="CalendarButton">
+            <Setter Property="MinWidth" Value="40"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource WidgetText}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CalendarButton">
+                        <Grid x:Name="MonthCellGrid" Margin="2">
+                            <Border x:Name="MonthBackground" CornerRadius="8" Background="Transparent"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsInactive" Value="True">
+                                <Setter Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="MonthBackground" Property="Background" Value="#25FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern CalendarItem Style (Removes solid white background box) -->
+        <Style x:Key="ModernCalendarItemStyle" TargetType="CalendarItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource WidgetText}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CalendarItem">
+                        <Grid x:Name="PART_Root">
+                            <Border Background="Transparent" BorderThickness="0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <!-- Navigation Header -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <!-- Prev Month Arrow Button -->
+                                        <Button x:Name="PART_PreviousButton"
+                                                Grid.Column="0"
+                                                Focusable="False"
+                                                Background="Transparent"
+                                                Foreground="{DynamicResource WidgetText}"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                Width="28" Height="28">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="BtnBorder" Background="Transparent" CornerRadius="14">
+                                                        <Path Data="M 8,3 L 3,8 L 8,13"
+                                                              Stroke="{DynamicResource WidgetText}"
+                                                              StrokeThickness="2"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- Month & Year Title Button -->
+                                        <Button x:Name="PART_HeaderButton"
+                                                Grid.Column="1"
+                                                Focusable="False"
+                                                Background="Transparent"
+                                                Foreground="{DynamicResource WidgetText}"
+                                                FontWeight="Bold"
+                                                FontSize="14"
+                                                FontFamily="{DynamicResource WidgetFont}"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="BtnBorder" Background="Transparent" Padding="8,3" CornerRadius="8">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="BtnBorder" Property="Background" Value="#20FFFFFF"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- Next Month Arrow Button -->
+                                        <Button x:Name="PART_NextButton"
+                                                Grid.Column="2"
+                                                Focusable="False"
+                                                Background="Transparent"
+                                                Foreground="{DynamicResource WidgetText}"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                Width="28" Height="28">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="BtnBorder" Background="Transparent" CornerRadius="14">
+                                                        <Path Data="M 3,3 L 8,8 L 3,13"
+                                                              Stroke="{DynamicResource WidgetText}"
+                                                              StrokeThickness="2"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                    
+                                    <!-- Month View Grid -->
+                                    <Grid Grid.Row="1" x:Name="PART_MonthView" Visibility="Visible">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                    </Grid>
+                                    
+                                    <!-- Year View Grid -->
+                                    <Grid Grid.Row="1" x:Name="PART_YearView" Visibility="Hidden">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="#01FFFFFF">
+        <!-- Layer 1: Outer Glass Container (aligned to window edge) -->
+        <Border x:Name="OuterGlassCard"
+                Style="{StaticResource OuterGlassCardStyle}"
+                MouseLeftButtonDown="WidgetCard_MouseLeftButtonDown"
+                MouseLeftButtonUp="WidgetCard_MouseLeftButtonUp"
+                MouseMove="WidgetCard_MouseMove">
+            
+            <!-- Layer 2: Inner Content Card -->
+            <Border x:Name="WidgetCard"
+                    Style="{StaticResource WidgetCardStyle}">
+                
+                <Grid Margin="16,16,16,12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Header -->
+                        <RowDefinition Height="Auto"/> <!-- Separator -->
+                        <RowDefinition Height="*"/>    <!-- Content (Calendar + Events Split) -->
+                    </Grid.RowDefinitions>
+                    
+                    <!-- 1. Header Area -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                                   
+                        <!-- Widget Title -->
+                        <TextBlock x:Name="TitleText"
+                                   Grid.Column="0"
+                                   Text="Calendar and Events"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   FontFamily="{DynamicResource WidgetFont}"
+                                   Foreground="{DynamicResource WidgetText}"
+                                   VerticalAlignment="Center"/>
+
+                        <!-- Refresh Button -->
+                        <Button Grid.Column="1"
+                                x:Name="RefreshButton"
+                                Content=""
+                                FontFamily="Segoe MDL2 Assets"
+                                FontSize="13"
+                                Foreground="{DynamicResource WidgetText}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="6"
+                                Cursor="Hand"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right"
+                                Opacity="0.7"
+                                RenderTransformOrigin="0.5,0.5"
+                                Click="RefreshButton_Click">
+                            <Button.RenderTransform>
+                                <RotateTransform x:Name="RefreshButtonRotation" Angle="0"/>
+                            </Button.RenderTransform>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Opacity" Value="1.0"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                    
+                    <!-- 2. Separator Line -->
+                    <Separator Grid.Row="1" Background="{DynamicResource WidgetBorder}" Margin="0,0,0,12"/>
+                    
+                    <!-- 3. Split Content Area (Calendar Left, Events Right) -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/> <!-- Calendar View -->
+                            <ColumnDefinition Width="Auto"/> <!-- Vertical Separator -->
+                            <ColumnDefinition Width="*"/>    <!-- Events List -->
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Left: WPF Calendar View -->
+                        <Border Grid.Column="0" Margin="0,0,12,0" VerticalAlignment="Top">
+                            <Calendar x:Name="MonthCalendarControl"
+                                      CalendarDayButtonStyle="{StaticResource ModernCalendarDayButtonStyle}"
+                                      CalendarButtonStyle="{StaticResource ModernCalendarButtonStyle}"
+                                      CalendarItemStyle="{StaticResource ModernCalendarItemStyle}"
+                                      SelectedDatesChanged="MonthCalendarControl_SelectedDatesChanged"
+                                      DisplayDateChanged="MonthCalendarControl_DisplayDateChanged"
+                                      SelectionMode="SingleDate"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Foreground="{DynamicResource WidgetText}"
+                                      FontFamily="{DynamicResource WidgetFont}"/>
+                        </Border>
+
+                        <!-- Middle: Vertical Separator -->
+                        <Separator Grid.Column="1" Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Background="{DynamicResource WidgetBorder}" Margin="0,0,12,0"/>
+
+                        <!-- Right: Events Area -->
+                        <Grid Grid.Column="2">
+                            <!-- Three Dots Pulsing Loading Indicator -->
+                            <StackPanel x:Name="LoadingStateIndicator"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Visibility="Collapsed">
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource WidgetSubText}" Margin="3,0">
+                                    <Ellipse.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.2" To="1.0" Duration="0:0:0.6" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource WidgetSubText}" Margin="3,0">
+                                    <Ellipse.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.2">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.2" To="1.0" Duration="0:0:0.6" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                                <Ellipse Width="7" Height="7" Fill="{DynamicResource WidgetSubText}" Margin="3,0">
+                                    <Ellipse.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.4">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.2" To="1.0" Duration="0:0:0.6" AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Ellipse.Triggers>
+                                </Ellipse>
+                            </StackPanel>
+
+                            <!-- Empty State Text (visible when no events overall) -->
+                            <TextBlock x:Name="EmptyStateText"
+                                       Text="No events scheduled."
+                                       FontSize="13"
+                                       FontStyle="Italic"
+                                       FontFamily="{DynamicResource WidgetFont}"
+                                       Foreground="{DynamicResource WidgetSubText}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
+                                       Opacity="0.8"
+                                       Visibility="Collapsed"/>
+                            
+                            <!-- Events ScrollViewer -->
+                            <ScrollViewer x:Name="EventsScrollViewer"
+                                          VerticalScrollBarVisibility="Hidden"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+                                <StackPanel>
+                                    <!-- SELECTED DATE SECTION -->
+                                    <StackPanel x:Name="SelectedDateSection" Margin="0,0,0,14">
+                                        <TextBlock x:Name="SelectedDateHeader"
+                                                   Text="TODAY" 
+                                                   FontSize="11" 
+                                                   FontWeight="Bold" 
+                                                   Foreground="{DynamicResource WidgetText}" 
+                                                   Opacity="0.75" 
+                                                   Margin="4,0,0,8"/>
+                                        <ItemsControl x:Name="SelectedDateEventsList">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,3,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Width="3" Height="32" CornerRadius="1.5" Background="{Binding AccentBrush}" Margin="0,0,10,0"/>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource WidgetText}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="38"/>
+                                                            <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                                                <TextBlock Text="{Binding TimeDisplay}" FontSize="10" Foreground="{DynamicResource WidgetSubText}"/>
+                                                                <TextBlock Text=" • " FontSize="10" Foreground="{DynamicResource WidgetSubText}" Visibility="{Binding TimeSeparatorVisibility}"/>
+                                                                <TextBlock Text="{Binding DurationDisplay}" FontSize="10" Foreground="{DynamicResource WidgetSubText}"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock x:Name="SelectedDateEmptyLabel" 
+                                                   Text="No events scheduled" 
+                                                   FontSize="12" 
+                                                   FontStyle="Italic" 
+                                                   Foreground="{DynamicResource WidgetSubText}" 
+                                                   Margin="16,4,0,4" 
+                                                   Opacity="0.5"/>
+                                    </StackPanel>
+
+                                    <!-- NEXT DAY / TOMORROW SECTION -->
+                                    <StackPanel x:Name="NextDaySection">
+                                        <TextBlock x:Name="NextDayHeader"
+                                                   Text="TOMORROW" 
+                                                   FontSize="11" 
+                                                   FontWeight="Bold" 
+                                                   Foreground="{DynamicResource WidgetText}" 
+                                                   Opacity="0.75" 
+                                                   Margin="4,0,0,8"/>
+                                        <ItemsControl x:Name="NextDayEventsList">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,3,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Grid.Column="0" Width="3" Height="32" CornerRadius="1.5" Background="{Binding AccentBrush}" Margin="0,0,10,0"/>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource WidgetText}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="38"/>
+                                                            <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                                                <TextBlock Text="{Binding TimeDisplay}" FontSize="10" Foreground="{DynamicResource WidgetSubText}"/>
+                                                                <TextBlock Text=" • " FontSize="10" Foreground="{DynamicResource WidgetSubText}" Visibility="{Binding TimeSeparatorVisibility}"/>
+                                                                <TextBlock Text="{Binding DurationDisplay}" FontSize="10" Foreground="{DynamicResource WidgetSubText}"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock x:Name="NextDayEmptyLabel" 
+                                                   Text="No events tomorrow" 
+                                                   FontSize="12" 
+                                                   FontStyle="Italic" 
+                                                   Foreground="{DynamicResource WidgetSubText}" 
+                                                   Margin="16,4,0,4" 
+                                                   Opacity="0.5"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

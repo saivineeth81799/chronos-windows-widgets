@@ -942,18 +942,55 @@ namespace WpfWidgets
                 string userId = WidgetConfig.Current.CalendarUserId;
                 
                 DateTime localNow = DateTime.Now;
-                DateTime todayUtc = localNow.Date;
+                var filteredEvents = await FetchEventsForRangeAsync(localNow.Date.AddDays(-7), localNow.Date.AddDays(36));
                 
-                var datesToFetch = new List<string>
+                filteredEvents.Sort((a, b) =>
                 {
-                    todayUtc.AddDays(-1).ToString("yyyy-MM-dd"),
-                    todayUtc.ToString("yyyy-MM-dd"),
-                    todayUtc.AddDays(1).ToString("yyyy-MM-dd"),
-                    todayUtc.AddDays(2).ToString("yyyy-MM-dd")
-                };
+                    if (string.IsNullOrEmpty(a.StartTime) && string.IsNullOrEmpty(b.StartTime)) return 0;
+                    if (string.IsNullOrEmpty(a.StartTime)) return -1;
+                    if (string.IsNullOrEmpty(b.StartTime)) return 1;
+                    return a.StartTime.CompareTo(b.StartTime);
+                });
                 
+                string serializedCache = JsonSerializer.Serialize(filteredEvents);
+                WidgetConfig.Current.CalendarEventsCache = serializedCache;
+                WidgetConfig.Save();
+                
+                EventsUpdated?.Invoke(filteredEvents);
+
+                // Sync Tasks
+                await SyncTasksAsync(idToken, userId);
+
+                SyncStatusChanged?.Invoke($"Synced: {DateTime.Now:h:mm tt}");
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[FirebaseSync] Exception during SyncNow: {ex.Message}");
+                SyncStatusChanged?.Invoke("Sync failed.");
+            }
+        }
+
+        /// <summary>
+        /// Fetches calendar events across any arbitrary date range on demand.
+        /// </summary>
+        public async Task<List<CalendarEvent>> FetchEventsForRangeAsync(DateTime rangeStart, DateTime rangeEnd)
+        {
+            try
+            {
+                string? idToken = await RefreshAccessTokenAsync();
+                if (string.IsNullOrEmpty(idToken)) return new List<CalendarEvent>();
+
+                string userId = WidgetConfig.Current.CalendarUserId;
+                if (string.IsNullOrEmpty(userId)) return new List<CalendarEvent>();
+
+                var datesToFetch = new List<string>();
+                for (DateTime cur = rangeStart.Date; cur <= rangeEnd.Date; cur = cur.AddDays(1))
+                {
+                    datesToFetch.Add(cur.ToString("yyyy-MM-dd"));
+                }
+
                 var allEvents = new List<CalendarEvent>();
-                
+
                 // 1. Fetch Concrete Firestore Events
                 foreach (var dateStr in datesToFetch)
                 {
@@ -984,7 +1021,6 @@ namespace WpfWidgets
                         string json = await response.Content.ReadAsStringAsync();
                         var rules = ParseRecurringRules(json);
                         
-                        // Project rules onto yesterday, today, tomorrow
                         foreach (var rule in rules)
                         {
                             if (!rule.Active) continue;
@@ -996,7 +1032,7 @@ namespace WpfWidgets
                                 
                                 if (dayStartTime < rule.CreatedAt) continue;
                                 
-                                int dayOfWeek = (int)day.DayOfWeek; // DayOfWeek matches 0=Sunday, 6=Saturday
+                                int dayOfWeek = (int)day.DayOfWeek;
                                 int dayOfMonth = day.Day;
                                 
                                 bool matches = false;
@@ -1015,7 +1051,6 @@ namespace WpfWidgets
                                 
                                 if (!matches) continue;
                                 
-                                // Check if override exists in database
                                 bool hasConcreteInstance = allEvents.Exists(evt => 
                                     evt.RecurringRuleId == rule.Id && 
                                     (evt.OriginalDate == dateStr || string.IsNullOrEmpty(evt.OriginalDate))
@@ -1056,7 +1091,7 @@ namespace WpfWidgets
                         string? accToken = await RefreshGoogleAccessTokenAsync(acc.Email, googleRefreshToken);
                         if (string.IsNullOrEmpty(accToken)) continue;
                         
-                        var gEvents = await FetchGoogleEventsAsync(accToken!, localNow.Date, localNow.Date.AddDays(2));
+                        var gEvents = await FetchGoogleEventsAsync(accToken!, rangeStart.Date, rangeEnd.Date);
                         foreach (var gev in gEvents)
                         {
                             gev.Id = $"gcal-{acc.Email}_{gev.Id}";
@@ -1069,16 +1104,14 @@ namespace WpfWidgets
                     LogHelper.Log($"[FirebaseSync] Error syncing Google Calendar accounts locally: {ex.Message}");
                 }
                 
-                DateTime todayStart = localNow.Date;
-                DateTime tomorrowEnd = todayStart.AddDays(2).AddTicks(-1);
-                
+                DateTime filterEnd = rangeEnd.Date.AddDays(1).AddTicks(-1);
                 var filteredEvents = new List<CalendarEvent>();
                 var uniqueIds = new HashSet<string>();
                 
                 foreach (var ev in allEvents)
                 {
                     if (uniqueIds.Contains(ev.Id)) continue;
-                    if (ev.Status == "deleted") continue; // Filter out tombstones
+                    if (ev.Status == "deleted") continue;
                     
                     DateTime eventStartLocal;
                     DateTime eventEndLocal;
@@ -1101,7 +1134,6 @@ namespace WpfWidgets
                         
                         if (isVirtual)
                         {
-                            // Virtual recurring events are already created in local time, do not treat as UTC
                             if (DateTime.TryParse($"{ev.StartDate}T{ev.StartTime}:00", null, System.Globalization.DateTimeStyles.None, out var parsedLocal))
                             {
                                 eventStartLocal = parsedLocal;
@@ -1114,7 +1146,6 @@ namespace WpfWidgets
                         }
                         else
                         {
-                            // Firestore database events and Google Calendar API events are UTC
                             if (DateTime.TryParse($"{ev.StartDate}T{ev.StartTime}:00Z", null, System.Globalization.DateTimeStyles.AdjustToUniversal, out var eventStartUtc))
                             {
                                 eventStartLocal = eventStartUtc.ToLocalTime();
@@ -1127,7 +1158,7 @@ namespace WpfWidgets
                         }
                     }
                     
-                    if (eventStartLocal < tomorrowEnd && eventEndLocal > todayStart)
+                    if (eventStartLocal < filterEnd && eventEndLocal >= rangeStart.Date)
                     {
                         ev.StartDate = eventStartLocal.ToString("yyyy-MM-dd");
                         ev.StartTime = string.IsNullOrEmpty(ev.StartTime) ? "" : eventStartLocal.ToString("HH:mm");
@@ -1136,30 +1167,13 @@ namespace WpfWidgets
                         uniqueIds.Add(ev.Id);
                     }
                 }
-                
-                filteredEvents.Sort((a, b) =>
-                {
-                    if (string.IsNullOrEmpty(a.StartTime) && string.IsNullOrEmpty(b.StartTime)) return 0;
-                    if (string.IsNullOrEmpty(a.StartTime)) return -1;
-                    if (string.IsNullOrEmpty(b.StartTime)) return 1;
-                    return a.StartTime.CompareTo(b.StartTime);
-                });
-                
-                string serializedCache = JsonSerializer.Serialize(filteredEvents);
-                WidgetConfig.Current.CalendarEventsCache = serializedCache;
-                WidgetConfig.Save();
-                
-                EventsUpdated?.Invoke(filteredEvents);
 
-                // Sync Tasks
-                await SyncTasksAsync(idToken, userId);
-
-                SyncStatusChanged?.Invoke($"Synced: {DateTime.Now:h:mm tt}");
+                return filteredEvents;
             }
             catch (Exception ex)
             {
-                LogHelper.Log($"[FirebaseSync] Exception during SyncNow: {ex.Message}");
-                SyncStatusChanged?.Invoke($"Sync error: {ex.Message}");
+                LogHelper.Log($"[FirebaseSync] Exception in FetchEventsForRangeAsync: {ex.Message}");
+                return new List<CalendarEvent>();
             }
         }
 

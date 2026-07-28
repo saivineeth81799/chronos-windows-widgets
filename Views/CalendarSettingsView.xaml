@@ -27,15 +27,17 @@
 
             <Separator Background="{DynamicResource DashboardBorder}" Margin="0,0,0,16"/>
 
-            <!-- Enable Widget Toggle -->
+            <!-- Section 1: Standard Compact Calendar Widget -->
+            <TextBlock Text="Standard Calendar Events Widget" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+            
             <Grid Margin="0,0,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Enable Calendar Widget" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Show the calendar widget on your desktop wallpaper" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                    <TextBlock Text="Enable Compact Calendar Widget" Foreground="{DynamicResource DashboardText}" FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="Show today and tomorrow's upcoming events on desktop" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
                 </StackPanel>
                 <CheckBox x:Name="CalendarEnabledToggle" 
                           Grid.Column="1" 
@@ -45,17 +47,14 @@
                           VerticalAlignment="Center"/>
             </Grid>
 
-            <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
-
-            <!-- Lock Position Toggle -->
-            <Grid>
+            <Grid Margin="0,12,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Lock Position" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="SemiBold"/>
-                    <TextBlock Text="Prevent dragging and ignore mouse clicks on the widget" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                    <TextBlock Text="Lock Compact Widget Position" Foreground="{DynamicResource DashboardText}" FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="Prevent dragging and ignore mouse clicks on compact widget" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
                 </StackPanel>
                 <CheckBox x:Name="CalendarLockToggle" 
                           Grid.Column="1" 
@@ -64,6 +63,46 @@
                           Unchecked="CalendarLockToggle_Changed"
                           VerticalAlignment="Center"/>
             </Grid>
+
+            <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
+
+            <!-- Section 2: Month Calendar Widget -->
+            <TextBlock Text="Full Month Calendar Widget" Foreground="{DynamicResource DashboardText}" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+            
+            <Grid Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Enable Month Calendar Widget" Foreground="{DynamicResource DashboardText}" FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="Show interactive full-month view with selected date events on desktop" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                </StackPanel>
+                <CheckBox x:Name="MonthCalendarEnabledToggle" 
+                          Grid.Column="1" 
+                          Style="{StaticResource ToggleSwitchStyle}"
+                          Checked="MonthCalendarEnabledToggle_Changed" 
+                          Unchecked="MonthCalendarEnabledToggle_Changed"
+                          VerticalAlignment="Center"/>
+            </Grid>
+
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Lock Month Widget Position" Foreground="{DynamicResource DashboardText}" FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="Prevent dragging and ignore mouse clicks on month widget" Foreground="{DynamicResource DashboardSubText}" FontSize="11" Margin="0,2,0,0"/>
+                </StackPanel>
+                <CheckBox x:Name="MonthCalendarLockToggle" 
+                          Grid.Column="1" 
+                          Style="{StaticResource ToggleSwitchStyle}"
+                          Checked="MonthCalendarLockToggle_Changed" 
+                          Unchecked="MonthCalendarLockToggle_Changed"
+                          VerticalAlignment="Center"/>
+            </Grid>
+
             <Separator Background="{DynamicResource DashboardBorder}" Margin="0,16"/>
 
             <!-- Google Calendar Connections Section -->

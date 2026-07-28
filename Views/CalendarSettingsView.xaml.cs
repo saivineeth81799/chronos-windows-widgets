@@ -112,6 +112,30 @@ namespace WpfWidgets.Views
             app?.ApplyCalendarLockState();
         }
 
+        private void MonthCalendarEnabledToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!_isInitialized) return;
+
+            bool isEnabled = MonthCalendarEnabledToggle.IsChecked ?? false;
+            WidgetConfig.Current.MonthCalendarEnabled = isEnabled;
+            WidgetConfig.Save();
+
+            var app = System.Windows.Application.Current as App;
+            app?.SetMonthCalendarWidgetVisibility(isEnabled);
+        }
+
+        private void MonthCalendarLockToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!_isInitialized) return;
+
+            bool isLocked = MonthCalendarLockToggle.IsChecked ?? false;
+            WidgetConfig.Current.MonthCalendarLocked = isLocked;
+            WidgetConfig.Save();
+
+            var app = System.Windows.Application.Current as App;
+            app?.ApplyMonthCalendarLockState();
+        }
+
         private void ConnectAccountButton_Click(object sender, RoutedEventArgs e)
         {
             var app = System.Windows.Application.Current as App;
@@ -184,6 +208,8 @@ namespace WpfWidgets.Views
 
             CalendarEnabledToggle.IsChecked = WidgetConfig.Current.CalendarEnabled;
             CalendarLockToggle.IsChecked = WidgetConfig.Current.CalendarLocked;
+            MonthCalendarEnabledToggle.IsChecked = WidgetConfig.Current.MonthCalendarEnabled;
+            MonthCalendarLockToggle.IsChecked = WidgetConfig.Current.MonthCalendarLocked;
             
             bool isSignedIn = !string.IsNullOrEmpty(WidgetConfig.Current.CalendarUserId);
             SyncNowButton.IsEnabled = isSignedIn;

@@ -38,6 +38,14 @@ namespace WpfWidgets
         public string CalendarRefreshTokenEncrypted { get; set; } = "";
         public string CalendarEventsCache { get; set; } = "[]";
 
+        // Month Calendar Widget Settings
+        public double MonthCalendarPositionX { get; set; } = -1;
+        public double MonthCalendarPositionY { get; set; } = -1;
+        public double MonthCalendarWidth { get; set; } = 580;
+        public double MonthCalendarHeight { get; set; } = 330;
+        public bool MonthCalendarLocked { get; set; } = false;
+        public bool MonthCalendarEnabled { get; set; } = false;
+
         // Tasks Widget Settings
         public double TasksPositionX { get; set; } = -1;
         public double TasksPositionY { get; set; } = -1;

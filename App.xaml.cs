@@ -14,6 +14,7 @@ namespace WpfWidgets
         private NotifyIcon? _notifyIcon;
         private ClockWidgetWindow? _clockWindow;
         private CalendarWidgetWindow? _calendarWindow;
+        private MonthCalendarWidgetWindow? _monthCalendarWindow;
         private TasksWidgetWindow? _tasksWindow;
         private WeatherWidgetWindow? _weatherWindow;
         private DashboardWindow? _dashboardWindow;
@@ -114,6 +115,7 @@ namespace WpfWidgets
             // 5. User is authenticated — create and show widgets
             _clockWindow = new ClockWidgetWindow();
             _calendarWindow = new CalendarWidgetWindow();
+            _monthCalendarWindow = new MonthCalendarWidgetWindow();
             _tasksWindow = new TasksWidgetWindow();
             _weatherWindow = new WeatherWidgetWindow();
             _dashboardWindow = new DashboardWindow();
@@ -136,6 +138,12 @@ namespace WpfWidgets
             if (WidgetConfig.Current.CalendarEnabled)
             {
                 _calendarWindow.Show();
+            }
+            
+            // Show month calendar widget if enabled
+            if (WidgetConfig.Current.MonthCalendarEnabled)
+            {
+                _monthCalendarWindow.Show();
             }
             
             // Show tasks widget if enabled
@@ -446,6 +454,7 @@ namespace WpfWidgets
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 _calendarWindow?.UpdateEventsList(events);
+                _monthCalendarWindow?.UpdateEventsList(events);
             }));
         }
 
@@ -460,7 +469,7 @@ namespace WpfWidgets
         private void UpdateSyncServiceState()
         {
             if (SyncService == null) return;
-            bool isSyncNeeded = WidgetConfig.Current.CalendarEnabled || WidgetConfig.Current.TasksEnabled;
+            bool isSyncNeeded = WidgetConfig.Current.CalendarEnabled || WidgetConfig.Current.MonthCalendarEnabled || WidgetConfig.Current.TasksEnabled;
             if (isSyncNeeded)
             {
                 SyncService.StartBackgroundSync();
@@ -551,11 +560,45 @@ namespace WpfWidgets
         }
 
         /// <summary>
+        /// Shows or hides the month calendar widget dynamically from settings toggles.
+        /// </summary>
+        public void SetMonthCalendarWidgetVisibility(bool isVisible)
+        {
+            if (_monthCalendarWindow == null) return;
+            try
+            {
+                if (isVisible)
+                {
+                    _monthCalendarWindow.Show();
+                    LogHelper.Log("[App] Month Calendar Widget visibility set to: Visible");
+                }
+                else
+                {
+                    _monthCalendarWindow.Hide();
+                    LogHelper.Log("[App] Month Calendar Widget visibility set to: Hidden");
+                }
+                UpdateSyncServiceState();
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log($"[App] Failed to change month calendar widget visibility: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Applies the current lock state to the calendar widget.
         /// </summary>
         public void ApplyCalendarLockState()
         {
             _calendarWindow?.ApplyLockState();
+        }
+
+        /// <summary>
+        /// Applies the current lock state to the month calendar widget.
+        /// </summary>
+        public void ApplyMonthCalendarLockState()
+        {
+            _monthCalendarWindow?.ApplyLockState();
         }
 
         /// <summary>
@@ -576,6 +619,7 @@ namespace WpfWidgets
             // Revert window-level opacity to full visibility
             if (_clockWindow != null) _clockWindow.Opacity = 1.0;
             if (_calendarWindow != null) _calendarWindow.Opacity = 1.0;
+            if (_monthCalendarWindow != null) _monthCalendarWindow.Opacity = 1.0;
             if (_tasksWindow != null) _tasksWindow.Opacity = 1.0;
             if (_weatherWindow != null) _weatherWindow.Opacity = 1.0;
 
@@ -611,6 +655,7 @@ namespace WpfWidgets
 
             if (_clockWindow != null) DesktopWindowHelper.ApplyBlurState(_clockWindow, enableBlur);
             if (_calendarWindow != null) DesktopWindowHelper.ApplyBlurState(_calendarWindow, enableBlur);
+            if (_monthCalendarWindow != null) DesktopWindowHelper.ApplyBlurState(_monthCalendarWindow, enableBlur);
             if (_tasksWindow != null) DesktopWindowHelper.ApplyBlurState(_tasksWindow, enableBlur);
             if (_weatherWindow != null) DesktopWindowHelper.ApplyBlurState(_weatherWindow, enableBlur);
 
