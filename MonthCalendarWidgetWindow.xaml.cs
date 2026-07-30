@@ -133,9 +133,22 @@ namespace WpfWidgets
             }
         }
 
+        private DateTime _lastKnownToday = DateTime.Today;
+
         public void UpdateEventsList(List<CalendarEvent> events)
         {
             _allEvents = events ?? new List<CalendarEvent>();
+
+            // Auto-advance selected date if midnight passed and user was on today's date
+            if (DateTime.Today != _lastKnownToday)
+            {
+                if (MonthCalendarControl.SelectedDate == _lastKnownToday)
+                {
+                    MonthCalendarControl.SelectedDate = DateTime.Today;
+                }
+                _lastKnownToday = DateTime.Today;
+            }
+
             FilterAndDisplayEventsForSelectedDate();
             DesktopWindowHelper.PushToBottom(this);
         }
