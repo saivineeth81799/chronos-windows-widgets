@@ -27,6 +27,8 @@ namespace WpfWidgets
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool GetCursorPos(out POINT lpPoint);
 
+        private DispatcherTimer? _midnightTimer;
+
         public MonthCalendarWidgetWindow()
         {
             InitializeComponent();
@@ -37,6 +39,8 @@ namespace WpfWidgets
 
             MonthCalendarControl.SelectedDate = DateTime.Today;
             LoadCachedEvents();
+
+            SetupMidnightTimer();
         }
 
         private void MonthCalendarWidgetWindow_SourceInitialized(object? sender, EventArgs e)
@@ -91,6 +95,14 @@ namespace WpfWidgets
             DesktopWindowHelper.PushToBottom(this);
         }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            _midnightTimer?.Stop();
+            Microsoft.Win32.SystemEvents.TimeChanged -= SystemEvents_TimeChanged;
+            Microsoft.Win32.SystemEvents.PowerModeChanged -= SystemEvents_PowerModeChanged;
+        }
+
         public void ApplyLockState()
         {
             DesktopWindowHelper.SetClickThrough(this, WidgetConfig.Current.MonthCalendarLocked);
@@ -133,20 +145,86 @@ namespace WpfWidgets
             }
         }
 
+        private void SetupMidnightTimer()
+        {
+            // 1. Hook Windows System Events (Time changed / Laptop wake from sleep)
+            Microsoft.Win32.SystemEvents.TimeChanged += SystemEvents_TimeChanged;
+            Microsoft.Win32.SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
+
+            // 2. Schedule single exact timer targeting next midnight
+            ScheduleMidnightTimer();
+        }
+
+        private void ScheduleMidnightTimer()
+        {
+            _midnightTimer?.Stop();
+
+            DateTime now = DateTime.Now;
+            DateTime nextMidnight = now.Date.AddDays(1);
+            TimeSpan timeUntilMidnight = nextMidnight - now;
+
+            if (timeUntilMidnight.TotalMilliseconds <= 0)
+                timeUntilMidnight = TimeSpan.FromSeconds(1);
+            else
+                timeUntilMidnight = timeUntilMidnight.Add(TimeSpan.FromSeconds(1));
+
+            _midnightTimer = new DispatcherTimer
+            {
+                Interval = timeUntilMidnight
+            };
+            _midnightTimer.Tick += (s, e) =>
+            {
+                _midnightTimer?.Stop();
+                CheckAndResetToToday();
+                ScheduleMidnightTimer();
+            };
+            _midnightTimer.Start();
+        }
+
+        private void SystemEvents_TimeChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                CheckAndResetToToday();
+                ScheduleMidnightTimer();
+            }));
+        }
+
+        private void SystemEvents_PowerModeChanged(object sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == Microsoft.Win32.PowerModes.Resume)
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    CheckAndResetToToday();
+                    ScheduleMidnightTimer();
+                }));
+            }
+        }
+
+        private void CheckAndResetToToday()
+        {
+            if (DateTime.Today != _lastKnownToday)
+            {
+                _lastKnownToday = DateTime.Today;
+                MonthCalendarControl.SelectedDate = DateTime.Today;
+                MonthCalendarControl.DisplayDate = DateTime.Today;
+                FilterAndDisplayEventsForSelectedDate();
+            }
+        }
+
         private DateTime _lastKnownToday = DateTime.Today;
 
         public void UpdateEventsList(List<CalendarEvent> events)
         {
             _allEvents = events ?? new List<CalendarEvent>();
 
-            // Auto-advance selected date if midnight passed and user was on today's date
+            // Auto-advance selected date unconditionally at midnight
             if (DateTime.Today != _lastKnownToday)
             {
-                if (MonthCalendarControl.SelectedDate == _lastKnownToday)
-                {
-                    MonthCalendarControl.SelectedDate = DateTime.Today;
-                }
                 _lastKnownToday = DateTime.Today;
+                MonthCalendarControl.SelectedDate = DateTime.Today;
+                MonthCalendarControl.DisplayDate = DateTime.Today;
             }
 
             FilterAndDisplayEventsForSelectedDate();
@@ -230,6 +308,7 @@ namespace WpfWidgets
                 DateTime nextDay = selectedDate.AddDays(1);
 
                 bool isToday = (selectedDate.Date == DateTime.Today);
+                TodayButton.Visibility = isToday ? Visibility.Collapsed : Visibility.Visible;
 
                 string selectedDateFormatted = selectedDate.ToString("MMM d").ToUpper();
                 string nextDayFormatted = nextDay.ToString("MMM d").ToUpper();
@@ -400,6 +479,13 @@ namespace WpfWidgets
 
             LogHelper.Log($"[Drag] Month Calendar Widget drag ended at ({Left}, {Top})");
             DesktopWindowHelper.PushToBottom(this);
+        }
+
+        private void TodayButton_Click(object sender, RoutedEventArgs e)
+        {
+            MonthCalendarControl.SelectedDate = DateTime.Today;
+            MonthCalendarControl.DisplayDate = DateTime.Today;
+            FilterAndDisplayEventsForSelectedDate();
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)

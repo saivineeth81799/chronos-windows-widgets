@@ -295,44 +295,75 @@
                                    Foreground="{DynamicResource WidgetText}"
                                    VerticalAlignment="Center"/>
 
-                        <!-- Refresh Button -->
-                        <Button Grid.Column="1"
-                                x:Name="RefreshButton"
-                                Content=""
-                                FontFamily="Segoe MDL2 Assets"
-                                FontSize="13"
-                                Foreground="{DynamicResource WidgetText}"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Padding="6"
-                                Cursor="Hand"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Right"
-                                Opacity="0.7"
-                                RenderTransformOrigin="0.5,0.5"
-                                Click="RefreshButton_Click">
-                            <Button.RenderTransform>
-                                <RotateTransform x:Name="RefreshButtonRotation" Angle="0"/>
-                            </Button.RenderTransform>
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Opacity" Value="1.0"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
+                        <!-- Action Buttons (Today Pill + Refresh Button) -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Today Quick Jump Button -->
+                            <Button x:Name="TodayButton"
+                                    Click="TodayButton_Click"
+                                    Margin="0,0,8,0"
+                                    Padding="8,3"
+                                    Background="#25FFFFFF"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    ToolTip="Jump to Today"
+                                    Visibility="Collapsed">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                            <TextBlock Text="Today"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       FontFamily="{DynamicResource WidgetFont}"
+                                                       Foreground="{DynamicResource WidgetText}"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="BtnBorder" Property="Background" Value="#40FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- Refresh Button -->
+                            <Button x:Name="RefreshButton"
+                                    Content=""
+                                    FontFamily="Segoe MDL2 Assets"
+                                    FontSize="13"
+                                    Foreground="{DynamicResource WidgetText}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Padding="6"
+                                    Cursor="Hand"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Right"
+                                    Opacity="0.7"
+                                    RenderTransformOrigin="0.5,0.5"
+                                    Click="RefreshButton_Click">
+                                <Button.RenderTransform>
+                                    <RotateTransform x:Name="RefreshButtonRotation" Angle="0"/>
+                                </Button.RenderTransform>
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="1.0"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                     
                     <!-- 2. Separator Line -->
